@@ -2,19 +2,21 @@ import { createClient } from '@/shared/lib/supabase/client'
 import type { Session } from '@supabase/supabase-js'
 
 export class AuthSessionService {
-  private supabase = createClient()
+  private getSupabase() {
+    return createClient()
+  }
 
   async getCurrentSession(): Promise<Session | null> {
     const {
       data: { session },
-    } = await this.supabase.auth.getSession()
+    } = await this.getSupabase().auth.getSession()
     return session
   }
 
   async refreshSession(): Promise<Session | null> {
     const {
       data: { session },
-    } = await this.supabase.auth.refreshSession()
+    } = await this.getSupabase().auth.refreshSession()
     return session
   }
 
