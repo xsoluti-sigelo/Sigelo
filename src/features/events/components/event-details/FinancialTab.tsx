@@ -25,12 +25,7 @@ import {
 } from '../../lib/order-helpers'
 import type { OrderFulfillmentItem } from '../../model'
 
-const getItemUnitPrice = (item: OrderFulfillmentItem, isAutoEvent: boolean): number => {
-  if (isAutoEvent) {
-    const serviceLink = item.new_order_items_contaazul_services?.[0]
-    const serviceRate = serviceLink?.contaazul_services?.rate
-    if (serviceRate) return serviceRate
-  }
+const getItemUnitPrice = (item: OrderFulfillmentItem): number => {
   return item.unit_price
 }
 
@@ -397,7 +392,7 @@ export function FinancialTab({
                                   {getItemDays(item)}x
                                 </td>
                                 <td className="px-4 py-3 text-right text-gray-900 dark:text-gray-100 font-mono">
-                                  {formatCurrency(getItemUnitPrice(item, isAutoEvent))}
+                                  {formatCurrency(getItemUnitPrice(item))}
                                 </td>
                                 <td className="px-4 py-3 text-right text-gray-900 dark:text-gray-100 font-mono font-semibold">
                                   {formatCurrency(getItemTotalPrice(item))}
@@ -513,7 +508,7 @@ export function FinancialTab({
                                 {getItemDays(item)}x
                               </td>
                               <td className="px-2 py-2 text-right text-gray-900 dark:text-gray-100 font-mono">
-                                {formatCurrency(getItemUnitPrice(item, isAutoEvent))}
+                                {formatCurrency(getItemUnitPrice(item))}
                               </td>
                               <td className="px-2 py-2 text-right text-gray-900 dark:text-gray-100 font-mono font-semibold">
                                 {formatCurrency(getItemTotalPrice(item))}

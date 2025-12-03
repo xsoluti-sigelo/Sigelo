@@ -391,7 +391,7 @@ export class NewEventInvoiceGeneratorService {
         service: serviceId ? { id: serviceId } : undefined,
         quantity: item.quantity,
         unitPrice: item.unit_price,
-        total: item.quantity * item.unit_price,
+        total: item.quantity * item.unit_price * (item.days || 1),
         description,
       }
     })
@@ -472,7 +472,7 @@ export class NewEventInvoiceGeneratorService {
       new_order_id: data.orderId,
       order_fulfillment_id: data.orderId,
       of_numbers: data.ofNumbers,
-      invoice_id_conta_azul: data.invoiceId,
+      invoice_id_conta_azul: (data.invoiceId),
       invoice_number: data.invoiceNumber,
       total_value: data.totalValue,
       payment_status: 'INVOICED',
