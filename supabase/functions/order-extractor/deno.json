@@ -1,0 +1,20 @@
+{
+  "imports": {
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2",
+    "@std/http": "https://deno.land/std@0.168.0/http/server.ts",
+    "google-auth-library": "https://esm.sh/google-auth-library@9.0.0",
+    "googleapis": "https://esm.sh/googleapis@126.0.0"
+  },
+  "lint": {
+    "rules": {
+      "exclude": ["no-explicit-any"]
+    }
+  },
+  "fmt": {
+    "useTabs": false,
+    "lineWidth": 100,
+    "indentWidth": 2,
+    "semiColons": true,
+    "singleQuote": true
+  }
+}

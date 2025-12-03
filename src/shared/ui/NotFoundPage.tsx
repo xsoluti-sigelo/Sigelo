@@ -1,0 +1,59 @@
+import Link from 'next/link'
+import Image from 'next/image'
+import { Button } from './Button'
+import { ROUTES } from '@/shared/config'
+
+interface NotFoundPageProps {
+  title: string
+  description: string
+  illustration?: string
+}
+
+export function NotFoundPage({
+  title,
+  description,
+  illustration = '/assets/images/undraw_page-not-found_6wni.svg',
+}: NotFoundPageProps) {
+  return (
+    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="max-w-6xl w-full mx-auto">
+        <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+          {/* Illustration */}
+          <div className="flex justify-center md:justify-end order-2 md:order-1">
+            <div className="relative w-full max-w-lg">
+              <Image
+                src={illustration}
+                alt="Page not found illustration"
+                width={500}
+                height={400}
+                className="w-full h-auto drop-shadow-2xl"
+                priority
+              />
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="text-center md:text-left order-1 md:order-2">
+            <h1 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-gray-100 mb-3 leading-tight">
+              Oops,
+              <br />
+              <span className="text-blue-600 dark:text-blue-500">{title.toLowerCase()}</span>
+            </h1>
+            <p className="text-base text-gray-600 dark:text-gray-400 mb-6 max-w-md">
+              {description}
+            </p>
+
+            {/* Actions */}
+            <div className="flex justify-center md:justify-start">
+              <Link href={ROUTES.DASHBOARD}>
+                <Button variant="outline" className="w-full sm:w-auto">
+                  Voltar
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

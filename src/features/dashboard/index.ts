@@ -1,0 +1,8 @@
+export { DashboardStats, StatsCard } from './components'
+export { DashboardStatsService, dashboardStatsService } from './services'
+export { getDashboardStats } from './actions'
+export { useDashboardStats } from './hooks'
+export type { DashboardStatsCard, IconType, ColorType } from './types'
+export { dashboardStatsCardSchema, dashboardStatsSchema } from './schemas'
+export { iconMap, colorMap } from './lib'
+export type { DashboardStats as DashboardStatsType } from '@/entities/dashboard'
