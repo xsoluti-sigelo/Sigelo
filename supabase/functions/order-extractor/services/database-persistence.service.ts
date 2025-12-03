@@ -792,8 +792,44 @@ export class DatabasePersistenceService {
   }
 
   private detectIntermittentEvent(emailData: ExtractedEmailData): boolean {
-    // Se existe seção DIÁRIA(s) com datas específicas, o evento é intermitente
-    return !!(emailData.dailies && emailData.dailies.exists && emailData.dailies.parsed.length > 0)
+    // Se não tem diárias, não é intermitente
+    if (!emailData.dailies?.parsed || emailData.dailies.parsed.length === 0) {
+      return false
+    }
+
+    // Converter datas de DD/MM/YYYY para Date
+    const parseBrazilianDate = (dateStr: string): Date => {
+      const [day, month, year] = dateStr.split('/').map(Number)
+      return new Date(year, month - 1, day)
+    }
+
+    const startDate = parseBrazilianDate(emailData.dates.startDate)
+    const endDate = parseBrazilianDate(emailData.dates.endDate || emailData.dates.startDate)
+    const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
+
+    // Se o número de diárias é menor que o período total, é intermitente
+    if (emailData.dailies.parsed.length < totalDays) {
+      return true
+    }
+
+    // Verificar se há gaps entre as datas (não são consecutivas)
+    const sortedDailies = [...emailData.dailies.parsed].sort((a, b) => {
+      return parseBrazilianDate(a).getTime() - parseBrazilianDate(b).getTime()
+    })
+
+    for (let i = 1; i < sortedDailies.length; i++) {
+      const prevDate = parseBrazilianDate(sortedDailies[i - 1])
+      const currDate = parseBrazilianDate(sortedDailies[i])
+      const diffDays = Math.ceil((currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24))
+
+      // Se há gap entre as datas (diferença > 1 dia), é intermitente
+      if (diffDays > 1) {
+        return true
+      }
+    }
+
+    // Se tem diárias e elas são consecutivas sem gaps, NÃO é intermitente
+    return false
   }
 
   private parseTime(timeStr: string): number {
