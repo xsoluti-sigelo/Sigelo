@@ -50,8 +50,13 @@ export function FinancialTab({
 }: FinancialTabProps) {
   const [isGeneratingInvoice, startGenerateInvoice] = useTransition()
 
-  const allOperationsCompleted =
-    operations.length > 0 && operations.every((op) => op.status === OperationStatus.COMPLETED)
+  const finalizedStatuses = [
+    OperationStatus.COMPLETED,
+    OperationStatus.CANCELLED,
+    OperationStatus.NOT_FULFILLED,
+  ]
+  const allOperationsFinalized =
+    operations.length > 0 && operations.every((op) => finalizedStatuses.includes(op.status))
   const hasOperations = operations.length > 0
   const hasExistingInvoice = !!existingInvoiceLog
 
@@ -192,7 +197,7 @@ export function FinancialTab({
         <div className="mb-6 space-y-4">
           <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
             <div className="flex items-center gap-3">
-              {allOperationsCompleted ? (
+              {allOperationsFinalized ? (
                 <>
                   <CheckIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
                   <div>
@@ -224,13 +229,13 @@ export function FinancialTab({
             </div>
             <Button
               onClick={handleGenerateInvoice}
-              disabled={!allOperationsCompleted || isGeneratingInvoice || hasExistingInvoice}
+              disabled={!allOperationsFinalized || isGeneratingInvoice || hasExistingInvoice}
               isLoading={isGeneratingInvoice}
               className="disabled:opacity-50 disabled:cursor-not-allowed"
               title={
                 hasExistingInvoice
                   ? 'Já existe uma fatura gerada para este evento'
-                  : !allOperationsCompleted
+                  : !allOperationsFinalized
                     ? 'Todas as operações devem estar concluídas para gerar a fatura'
                     : 'Gerar fatura consolidada do evento'
               }
@@ -464,7 +469,7 @@ export function FinancialTab({
                           eventId={event.id}
                           orderId={of.id}
                           orderNumber={getOrderNumber(of)}
-                          disabled={!allOperationsCompleted}
+                          disabled={!allOperationsFinalized}
                           hasInvoice={getOrderHasInvoice(of.id, getOrderNumber(of))}
                         />
                       )}
