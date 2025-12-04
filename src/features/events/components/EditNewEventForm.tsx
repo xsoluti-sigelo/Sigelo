@@ -251,23 +251,39 @@ export function EditNewEventForm({
                 </FormField>
               </div>
             ) : (
-              <FormField label="Cliente" required>
-                <select
-                  value={formState.clientId}
-                  onChange={(e) => setters.setClientId(e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-200 dark:border-gray-700 dark:bg-white dark:text-gray-900"
-                  required
-                >
-                  <option value="">Selecione um cliente</option>
-                  {clientes.map((cliente) => (
-                    <option key={cliente.id} value={cliente.id}>
-                      {cliente.name}
-                      {cliente.cnpj ? ` - CNPJ: ${cliente.cnpj}` : ''}
-                      {cliente.cpf ? ` - CPF: ${cliente.cpf}` : ''}
-                    </option>
-                  ))}
-                </select>
-              </FormField>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <FormField label="Status" required>
+                  <select
+                    value={formState.status}
+                    onChange={(e) => setters.setStatus(e.target.value)}
+                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-200 dark:border-gray-700 dark:bg-white dark:text-gray-900"
+                  >
+                    {STATUS_OPTIONS.map((status) => (
+                      <option key={status.value} value={status.value}>
+                        {status.label}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+
+                <FormField label="Cliente" required>
+                  <select
+                    value={formState.clientId}
+                    onChange={(e) => setters.setClientId(e.target.value)}
+                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-200 dark:border-gray-700 dark:bg-white dark:text-gray-900"
+                    required
+                  >
+                    <option value="">Selecione um cliente</option>
+                    {clientes.map((cliente) => (
+                      <option key={cliente.id} value={cliente.id}>
+                        {cliente.name}
+                        {cliente.cnpj ? ` - CNPJ: ${cliente.cnpj}` : ''}
+                        {cliente.cpf ? ` - CPF: ${cliente.cpf}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+              </div>
             )}
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

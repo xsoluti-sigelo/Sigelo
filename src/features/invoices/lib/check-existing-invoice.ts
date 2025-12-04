@@ -20,7 +20,7 @@ export async function checkExistingInvoice(
   const { data, error } = await supabase
     .from('invoice_generation_logs')
     .select('id, invoice_number, of_numbers, created_at, invoice_id_conta_azul')
-    .eq('event_id', eventId)
+    .eq('new_event_id', eventId)
     .eq('tenant_id', tenantId)
     .eq('success', true)
     .order('created_at', { ascending: false })

@@ -387,11 +387,17 @@ export class NewEventInvoiceGeneratorService {
         description = 'Serviço'
       }
 
+      const quantity = item.quantity || 0
+      const unitPrice = item.unit_price || 0
+      const days = item.days || 1
+      const adjustedQuantity = quantity * days
+      const total = Math.round(adjustedQuantity * unitPrice * 100) / 100
+
       return {
         service: serviceId ? { id: serviceId } : undefined,
-        quantity: item.quantity,
-        unitPrice: item.unit_price,
-        total: item.quantity * item.unit_price * (item.days || 1),
+        quantity: adjustedQuantity,
+        unitPrice,
+        total,
         description,
       }
     })
@@ -465,24 +471,45 @@ export class NewEventInvoiceGeneratorService {
   }): Promise<void> {
     const supabase = await createClient()
 
+    // Sanitize JSON fields to handle NaN, Infinity, undefined
+    const sanitizeForJson = (obj: unknown): unknown => {
+      return JSON.parse(
+        JSON.stringify(obj, (_key, value) => {
+          if (typeof value === 'number' && !Number.isFinite(value)) {
+            return null
+          }
+          return value
+        }),
+      )
+    }
+
+    // Validate UUID format - order_fulfillment_id column is UUID type
+    const isValidUuid = (str: string | null): boolean => {
+      if (!str) return false
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      return uuidRegex.test(str)
+    }
+
     const log = {
       tenant_id: this.tenantId,
       user_id: this.userId,
       new_event_id: data.eventId,
-      new_order_id: data.orderId,
-      order_fulfillment_id: data.orderId,
+      new_order_id: data.orderId || null,
+      order_fulfillment_id: isValidUuid(data.orderId) ? data.orderId : null,
       of_numbers: data.ofNumbers,
-      invoice_id_conta_azul: (data.invoiceId),
-      invoice_number: data.invoiceNumber,
-      total_value: data.totalValue,
+      invoice_id_conta_azul: data.invoiceId || null,
+      invoice_number: data.invoiceNumber || null,
+      total_value: Number.isFinite(data.totalValue) ? data.totalValue : 0,
       payment_status: 'INVOICED',
-      payment_due_date: data.paymentDueDate,
+      payment_due_date: data.paymentDueDate || null,
       success: true,
       invoice_path: data.invoicePath || null,
-      payload_sent: JSON.parse(JSON.stringify(data.payloadSent)),
-      response_payload: JSON.parse(JSON.stringify(data.responsePayload)),
+      payload_sent: sanitizeForJson(data.payloadSent),
+      response_payload: sanitizeForJson(data.responsePayload),
       created_at: new Date().toISOString(),
     }
+
+    logger.info('Attempting to insert invoice generation log', { log })
 
     const { error } = await supabase.from('invoice_generation_logs').insert(log as never)
 
@@ -596,12 +623,19 @@ export class NewEventInvoiceGeneratorService {
   ): Promise<void> {
     const supabase = await createClient()
 
+    // Validate UUID format - order_fulfillment_id column is UUID type
+    const isValidUuid = (str: string | null): boolean => {
+      if (!str) return false
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      return uuidRegex.test(str)
+    }
+
     const log = {
       tenant_id: this.tenantId,
       user_id: this.userId,
       new_event_id: eventId,
-      new_order_id: orderId,
-      order_fulfillment_id: orderId,
+      new_order_id: orderId || null,
+      order_fulfillment_id: isValidUuid(orderId) ? orderId : null,
       of_numbers: ofNumbers || [],
       success: false,
       error_message: errorMessage,

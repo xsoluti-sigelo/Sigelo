@@ -180,6 +180,13 @@ export async function getEventDetails(eventId: string): Promise<EventDetailsData
         if (log.order_fulfillment_id) {
           acc.push(log.order_fulfillment_id)
         }
+        if (log.of_numbers && Array.isArray(log.of_numbers)) {
+          log.of_numbers.forEach((ofNumber: string) => {
+            if (ofNumber && !acc.includes(ofNumber)) {
+              acc.push(ofNumber)
+            }
+          })
+        }
         return acc
       }, []) || [],
     eventIssues: (eventIssues || []) as Issue[],

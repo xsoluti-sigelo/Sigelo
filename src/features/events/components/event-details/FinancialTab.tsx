@@ -60,7 +60,8 @@ export function FinancialTab({
   const isManualEvent = eventSource === 'MANUAL'
 
   const invoicedOrdersSet = new Set(invoicedOrderIds)
-  const getOrderHasInvoice = (orderId: string) => invoicedOrdersSet.has(orderId)
+  const getOrderHasInvoice = (orderId: string, orderNumber?: string) =>
+    invoicedOrdersSet.has(orderId) || (orderNumber ? invoicedOrdersSet.has(orderNumber) : false)
 
   const handleGenerateInvoice = () => {
     startGenerateInvoice(async () => {
@@ -464,7 +465,7 @@ export function FinancialTab({
                           orderId={of.id}
                           orderNumber={getOrderNumber(of)}
                           disabled={!allOperationsCompleted}
-                          hasInvoice={getOrderHasInvoice(of.id)}
+                          hasInvoice={getOrderHasInvoice(of.id, getOrderNumber(of))}
                         />
                       )}
                     </div>
