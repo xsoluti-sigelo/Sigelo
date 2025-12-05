@@ -540,3 +540,99 @@ export async function getAllOperationsForExport({
     return transformToOperationDisplay(op, equipment, producer)
   })
 }
+
+
+export async function getOperationsByIds(ids: string[]): Promise<OperationDisplay[]> {
+  if (ids.length === 0) return []
+
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    throw new Error('Unauthorized')
+  }
+
+  const { data, error } = await supabase
+    .from('new_operations')
+    .select(
+      `
+      id,
+      event_id,
+      type,
+      subtype,
+      date,
+      time,
+      duration,
+      driver,
+      vehicle,
+      helper,
+      vehicle_type,
+      status,
+      notes,
+      new_events(
+        id,
+        number,
+        year,
+        name,
+        location,
+        source,
+        event_locations(
+          formatted_address,
+          raw_address
+        ),
+        new_events_contaazul_pessoas(
+          contaazul_pessoas(
+            name
+          )
+        )
+      )
+    `,
+    )
+    .in('id', ids)
+    .order('date', { ascending: true })
+    .order('time', { ascending: true })
+
+  if (error) {
+    throw new Error('Failed to fetch operations by IDs')
+  }
+
+  const eventIds = [...new Set((data || []).map((op) => op.new_events.id).filter(Boolean))]
+
+  if (eventIds.length === 0) {
+    return (data || []).map((op: OperationData) => transformToOperationDisplay(op))
+  }
+
+  const [ordersResult, producersResult] = await Promise.all([
+    supabase
+      .from('new_orders')
+      .select(
+        `
+        event_id,
+        number,
+        is_cancelled,
+        new_order_items(
+          description,
+          quantity
+        )
+      `,
+      )
+      .in('event_id', eventIds),
+    supabase
+      .from('new_people')
+      .select('event_id, name, phone, is_primary, role')
+      .in('event_id', eventIds)
+      .in('role', ['producer', 'coordinator']),
+  ])
+
+  const equipmentByEvent = processEquipmentByEvent((ordersResult.data || []) as OrderData[])
+  const producerByEvent = processProducersByEvent((producersResult.data || []) as ProducerData[])
+
+  return (data || []).map((op: OperationData) => {
+    const equipment = equipmentByEvent.get(op.new_events.id)
+    const producer = producerByEvent.get(op.new_events.id)
+    return transformToOperationDisplay(op, equipment, producer)
+  })
+}

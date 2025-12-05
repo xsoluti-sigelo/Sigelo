@@ -39,7 +39,6 @@ export function OperationsPageClient({
     <>
       <OperationsHeader
         count={count}
-        operations={operations}
         selectedIds={selectedIds}
         drivers={drivers}
         vehicles={vehicles}

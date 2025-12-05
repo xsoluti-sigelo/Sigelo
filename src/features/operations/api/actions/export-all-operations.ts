@@ -1,6 +1,6 @@
 'use server'
 
-import { getAllOperationsForExport } from '../queries/get-operations'
+import { getAllOperationsForExport, getOperationsByIds } from '../queries/get-operations'
 import type { OperationDisplay } from '@/features/operations/model/types'
 import { OperationType, OperationStatus } from '@/features/operations/config/operations-config'
 
@@ -33,6 +33,21 @@ export async function fetchAllOperationsForExport(
       success: false,
       data: [],
       error: error instanceof Error ? error.message : 'Failed to fetch operations',
+    }
+  }
+}
+
+export async function fetchOperationsByIds(
+  ids: string[],
+): Promise<{ success: boolean; data: OperationDisplay[]; error?: string }> {
+  try {
+    const data = await getOperationsByIds(ids)
+    return { success: true, data }
+  } catch (error) {
+    return {
+      success: false,
+      data: [],
+      error: error instanceof Error ? error.message : 'Failed to fetch operations by IDs',
     }
   }
 }

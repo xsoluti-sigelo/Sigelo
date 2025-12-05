@@ -3,14 +3,10 @@
 import { ArrowDownTrayIcon, PlusIcon } from '@heroicons/react/24/outline'
 import { useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import type {
-  OperationDisplay,
-  DriverOption,
-  VehicleOption,
-} from '@/features/operations/model/types'
+import type { DriverOption, VehicleOption } from '@/features/operations/model/types'
 import type { ContaAzulServiceRecord as ContaAzulService } from '@/features/integrations/contaazul'
 import { exportOperationsToExcel } from '../../lib/export-operations'
-import { fetchAllOperationsForExport } from '../../api/actions/export-all-operations'
+import { fetchAllOperationsForExport, fetchOperationsByIds } from '../../api/actions/export-all-operations'
 import { getOperationTypeLabel, OperationType, OperationTypeLabels, OperationStatus, OperationStatusLabels, getOperationStatusLabel } from '@/features/operations/config/operations-config'
 import { formatDate } from '@/shared/lib/formatters'
 import { CreateStandaloneOperationModal } from '../CreateStandaloneOperationModal'
@@ -23,7 +19,6 @@ import { useListFilters } from '@/shared/hooks/useListFilters'
 
 interface OperationsHeaderProps {
   count: number
-  operations: OperationDisplay[]
   selectedIds: Set<string>
   drivers: DriverOption[]
   vehicles: VehicleOption[]
@@ -32,7 +27,6 @@ interface OperationsHeaderProps {
 
 export function OperationsHeader({
   count,
-  operations,
   selectedIds,
   drivers,
   vehicles,
@@ -57,14 +51,16 @@ export function OperationsHeader({
   })
 
   const handleExport = async () => {
-    if (selectedIds.size > 0) {
-      const operationsToExport = operations.filter((op) => selectedIds.has(op.id))
-      exportOperationsToExcel(operationsToExport)
-      return
-    }
-
     setIsExporting(true)
     try {
+      if (selectedIds.size > 0) {
+        const result = await fetchOperationsByIds(Array.from(selectedIds))
+        if (result.success && result.data.length > 0) {
+          exportOperationsToExcel(result.data)
+        }
+        return
+      }
+
       const currentFilters = {
         search: searchParams.get('search') || '',
         event_search: searchParams.get('event_search') || '',
