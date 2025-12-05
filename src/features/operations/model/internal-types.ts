@@ -24,6 +24,11 @@ export interface EventData {
     formatted_address?: string | null
     raw_address?: string | null
   }>
+  new_events_contaazul_pessoas?: Array<{
+    contaazul_pessoas?: {
+      name?: string
+    }
+  }>
 }
 
 export interface OperationData {

@@ -115,7 +115,7 @@ function transformToOperationDisplay(
     .trim()
 
   const clientName =
-  (operation.new_events as any)?.new_events_contaazul_pessoas?.[0]?.contaazul_pessoas?.name ||
+    operation.new_events?.new_events_contaazul_pessoas?.[0]?.contaazul_pessoas?.name ||
     'Sem cliente'
 
   return {
