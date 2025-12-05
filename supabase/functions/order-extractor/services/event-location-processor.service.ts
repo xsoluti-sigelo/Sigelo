@@ -141,6 +141,7 @@ export class EventLocationProcessorService {
 
   /**
    * Salva a localização na tabela event_locations
+   * Usa upsert para evitar duplicatas: se já existe, atualiza
    */
   private async saveLocation(
     eventId: string,
@@ -153,6 +154,14 @@ export class EventLocationProcessorService {
       hasRawAddress: !!geocodingResult.rawAddress,
       geocodingSuccess: geocodingResult.success,
     })
+
+    // Primeiro, verificar se já existe uma localização primária para este evento
+    const { data: existing } = await this.supabase
+      .from('event_locations')
+      .select('id')
+      .eq('event_id', eventId)
+      .eq('is_primary', true)
+      .maybeSingle()
 
     const locationRecord = {
       event_id: eventId,
@@ -177,20 +186,37 @@ export class EventLocationProcessorService {
       is_primary: true,
     }
 
-    logger.info('🔵 [SAVE_LOCATION] Registro preparado para inserção', {
-      eventId,
-      recordKeys: Object.keys(locationRecord),
-      hasCoordinates: !!locationRecord.latitude,
-      status: locationRecord.geocoding_status,
-    })
+    let data, error
 
-    logger.info('🔵 [SAVE_LOCATION] Chamando insert no Supabase', { eventId })
+    if (existing?.id) {
+      // Atualizar registro existente
+      logger.info('🔵 [SAVE_LOCATION] Localização já existe, atualizando...', {
+        eventId,
+        existingId: existing.id,
+      })
 
-    const { data, error } = await this.supabase
-      .from('event_locations')
-      .insert(locationRecord)
-      .select()
-      .single()
+      const result = await this.supabase
+        .from('event_locations')
+        .update(locationRecord)
+        .eq('id', existing.id)
+        .select()
+        .single()
+
+      data = result.data
+      error = result.error
+    } else {
+      // Inserir novo registro
+      logger.info('🔵 [SAVE_LOCATION] Criando nova localização...', { eventId })
+
+      const result = await this.supabase
+        .from('event_locations')
+        .insert(locationRecord)
+        .select()
+        .single()
+
+      data = result.data
+      error = result.error
+    }
 
     if (error) {
       logger.error('🔴 [SAVE_LOCATION] Erro ao salvar localização', {
@@ -213,6 +239,7 @@ export class EventLocationProcessorService {
       eventId: data.event_id,
       hasCoordinates: !!data.latitude,
       status: data.geocoding_status,
+      wasUpdate: !!existing?.id,
     })
 
     return data.id

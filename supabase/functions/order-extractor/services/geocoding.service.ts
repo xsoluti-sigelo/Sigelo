@@ -20,6 +20,7 @@ export interface GeocodingResult {
   formattedAddress?: string
   street?: string
   number?: string
+  numberSource?: 'google' | 'regex_fallback'
   complement?: string
   neighborhood?: string
   city?: string
@@ -36,6 +37,7 @@ interface GoogleGeocodingResponse {
   results: Array<{
     formatted_address: string
     place_id: string
+    types: string[]
     geometry: {
       location: {
         lat: number
@@ -126,6 +128,27 @@ export class GeocodingService {
       const result = data.results[0]
       const components = this.parseAddressComponents(result.address_components)
 
+      // Verificar se é establishment (Google não retorna street_number nesses casos)
+      const isEstablishment =
+        result.types?.includes('establishment') || result.types?.includes('point_of_interest')
+
+      // Fallback: extrair número do raw_address se Google não retornou
+      let number = components.number
+      let numberSource: 'google' | 'regex_fallback' = 'google'
+
+      if (!number) {
+        const extractedNumber = this.extractStreetNumber(rawAddress)
+        if (extractedNumber) {
+          number = extractedNumber
+          numberSource = 'regex_fallback'
+          logger.info('Número extraído via regex fallback', {
+            extractedNumber,
+            isEstablishment,
+            rawAddress: rawAddress.substring(0, 100),
+          })
+        }
+      }
+
       const geocodingResult: GeocodingResult = {
         success: true,
         rawAddress,
@@ -135,7 +158,8 @@ export class GeocodingService {
         latitude: result.geometry.location.lat,
         longitude: result.geometry.location.lng,
         street: components.street,
-        number: components.number,
+        number,
+        numberSource: number ? numberSource : undefined,
         complement: components.complement,
         neighborhood: components.neighborhood,
         city: components.city,
@@ -216,6 +240,39 @@ export class GeocodingService {
     }
 
     return result
+  }
+
+  private extractStreetNumber(rawAddress: string): string | null {
+    if (!rawAddress) return null
+
+    // Normaliza: remove quebras de linha e espaços múltiplos
+    const normalized = rawAddress.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim()
+
+    // 1. S/N (Sem Número) - retorna literal
+    if (/,\s*S\/N[º°]?(?:\s|$|\/)/i.test(normalized)) {
+      return 'S/N'
+    }
+
+    // 2. ALT ou ALTURA (ex: "ALT 37", "ALTURA 232")
+    const altMatch = normalized.match(/,\s*ALT(?:URA)?\s+(\d+)/i)
+    if (altMatch) return altMatch[1]
+
+    // 3. Range de números (ex: "81-186", "21-63")
+    const rangeMatch = normalized.match(/,\s*(\d+[-–]\d+)/)
+    if (rangeMatch) return rangeMatch[1]
+
+    // 4. Número após vírgula (padrão mais comum)
+    // Captura: "RUA X, 123" ou "RUA X, 123 BAIRRO" ou "RUA X, 123 X RUA Y"
+    const numberMatch = normalized.match(/,\s*(\d+[A-Z]?)(?:\s|\/|$|X\s)/i)
+    if (numberMatch) return numberMatch[1]
+
+    // 5. Fallback: número após tipo de logradouro
+    const fallbackMatch = normalized.match(
+      /(?:RUA|R\.|AV|AVENIDA|ALAMEDA|AL\.|TRAVESSA|TV\.|ESTRADA|PRAÇA|PÇ\.)[^,]+,\s*(\d+)/i,
+    )
+    if (fallbackMatch) return fallbackMatch[1]
+
+    return null
   }
 
   /**
