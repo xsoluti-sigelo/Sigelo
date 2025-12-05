@@ -70,28 +70,6 @@ export default async function EventDetailPage({ params }: PageProps) {
     historyLogs,
   } = eventDetails
 
-  const transformedEventProducers = eventProducers.map((person) => ({
-    id: person.id,
-    event_id: person.event_id,
-    party_id: person.id,
-    is_primary: person.is_primary,
-    parties: {
-      id: person.id,
-      display_name: person.name,
-      full_name: person.name,
-      party_type: person.role,
-      party_contacts: person.phone
-        ? [
-            {
-              contact_type: 'phone',
-              contact_value: person.phone,
-              is_primary: true,
-            },
-          ]
-        : [],
-    },
-  }))
-
   return (
     <div className="p-8 w-full">
       <div className="max-w-[1600px] mx-auto">
@@ -113,7 +91,7 @@ export default async function EventDetailPage({ params }: PageProps) {
           delegationStatus={delegationStatus}
           orderFulfillments={orderFulfillments}
           eventServiceItems={eventServiceItems}
-          eventProducers={transformedEventProducers}
+          eventProducers={eventProducers}
           attachments={attachments}
           invoices={invoices}
           invoice={invoice}

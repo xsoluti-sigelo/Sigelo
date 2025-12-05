@@ -498,6 +498,7 @@ export class EventManagementService {
     const { error } = await this.supabase.from('new_people').insert(
       people.map((person) => ({
         id: person.id,
+        tenant_id: this.tenantId,
         event_id: person.eventId,
         name: person.name,
         role: person.role,

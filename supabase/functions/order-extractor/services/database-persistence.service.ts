@@ -961,6 +961,7 @@ export class DatabasePersistenceService {
     }
 
     // Adicionar coordenadores (se existirem)
+    // Coordenadores nunca são "principal" - apenas produtores podem ser
     if (emailData.coordinators?.parsed && Array.isArray(emailData.coordinators.parsed)) {
       emailData.coordinators.parsed.forEach((coordinator, index) => {
         people.push({
@@ -971,7 +972,7 @@ export class DatabasePersistenceService {
           phone: coordinator.phones?.[0] || null,
           document: null,
           organization: null,
-          isPrimary: index === 0,
+          isPrimary: false,
         })
       })
     }

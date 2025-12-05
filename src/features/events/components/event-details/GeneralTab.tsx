@@ -1,7 +1,7 @@
 'use client'
 
 import { formatDate, formatCPFCNPJ } from '@/shared/lib/formatters'
-import type { EventWithFinancialData, OrderFulfillment, EventProducer } from '../../model'
+import type { EventWithFinancialData, OrderFulfillment, EventProducerDb } from '../../model'
 import {
   OrderFulfillmentStatusLabels,
   OrderFulfillmentStatusColors,
@@ -16,7 +16,7 @@ import { ListItemCard } from './ListItemCard'
 interface GeneralTabProps {
   event: EventWithFinancialData
   orderFulfillments: OrderFulfillment[]
-  eventProducers: EventProducer[]
+  eventProducers: EventProducerDb[]
 }
 
 export function GeneralTab({ event, orderFulfillments, eventProducers }: GeneralTabProps) {
@@ -184,36 +184,45 @@ export function GeneralTab({ event, orderFulfillments, eventProducers }: General
       )}
 
       {eventProducers.length > 0 && (
-        <DetailSection title="Produtores do evento">
+        <DetailSection title="Produtores e coordenadores">
           <div className="space-y-4">
             {eventProducers.map((producer) => (
               <ListItemCard
                 key={producer.id}
-                title={
-                  <span className="text-sm">
-                    {producer.parties?.display_name || producer.parties?.full_name || 'Produtor'}
-                  </span>
-                }
+                title={<span className="text-sm">{producer.name}</span>}
                 badge={
-                  producer.is_primary ? (
-                    <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                      Principal
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                        producer.role === 'producer'
+                          ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                          : 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
+                      }`}
+                    >
+                      {producer.role === 'producer' ? 'Produtor' : 'Coordenador'}
                     </span>
-                  ) : undefined
+                    {producer.is_primary && (
+                      <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                        Principal
+                      </span>
+                    )}
+                  </div>
                 }
               >
-                {producer.parties?.party_contacts && producer.parties.party_contacts.length > 0 && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {producer.parties.party_contacts.map((contact, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">
-                          {contact.contact_type}:
-                        </span>
-                        <span className="text-xs text-gray-900 dark:text-gray-100">
-                          {contact.contact_value}
-                        </span>
-                      </div>
-                    ))}
+                {producer.phone && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Telefone:</span>
+                    <span className="text-xs text-gray-900 dark:text-gray-100 font-mono">
+                      {producer.phone}
+                    </span>
+                  </div>
+                )}
+                {producer.organization && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Organização:</span>
+                    <span className="text-xs text-gray-900 dark:text-gray-100">
+                      {producer.organization}
+                    </span>
                   </div>
                 )}
               </ListItemCard>

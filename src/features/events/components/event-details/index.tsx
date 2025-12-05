@@ -113,16 +113,15 @@ export function EventDetailsWithTabs({
     <div className="space-y-6">
       <EventIssuesAlert issues={issues} eventId={event.id} />
 
-      <EventHeader
-        eventId={event.id}
-        contractName={event.contract_name}
-        contractNumber={event.contract_number}
-        status={event.status}
-        invoice={invoice}
-        delegationStatus={delegationStatus}
-      />
-
       <Card className="p-6">
+        <EventHeader
+          eventId={event.id}
+          contractName={event.contract_name}
+          contractNumber={event.contract_number}
+          status={event.status}
+          invoice={invoice}
+          delegationStatus={delegationStatus}
+        />
         <Tabs tabs={tabs} defaultTab="dados" />
       </Card>
     </div>

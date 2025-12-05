@@ -5,6 +5,7 @@ export type {
   EventIssue,
   EventServiceItem,
   EventProducer,
+  EventProducerDb,
   InvoiceGenerationLog,
   EventWithFinancialData,
   EventInvoice,
@@ -18,7 +19,7 @@ import type {
   EventWithFinancialData,
   OrderFulfillment,
   EventServiceItem,
-  EventProducer,
+  EventProducerDb,
   EventAttachment,
   EventIssue,
   InvoiceGenerationLog,
@@ -35,7 +36,7 @@ export interface EventDetailsProps {
   delegationStatus: DelegationStatus
   orderFulfillments: OrderFulfillment[]
   eventServiceItems?: EventServiceItem[]
-  eventProducers?: EventProducer[]
+  eventProducers?: EventProducerDb[]
   attachments: EventAttachment[]
   invoices?: Array<{
     id: string
