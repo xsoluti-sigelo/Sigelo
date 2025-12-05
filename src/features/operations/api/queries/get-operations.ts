@@ -114,11 +114,16 @@ function transformToOperationDisplay(
     .replace(/\s+/g, ' ')
     .trim()
 
+  const clientName =
+  (operation.new_events as any)?.new_events_contaazul_pessoas?.[0]?.contaazul_pessoas?.name ||
+    'Sem cliente'
+
   return {
     id: operation.id,
     event_id: operation.event_id,
     event_number: operation.new_events?.number || '-',
     event_title: fullEventTitle,
+    client_name: clientName,
     operation_type: operation.type as OperationType,
     scheduled_date: operation.date,
     scheduled_time: operation.time,
@@ -246,6 +251,11 @@ export async function getOperations({
         event_locations(
           formatted_address,
           raw_address
+        ),
+        new_events_contaazul_pessoas(
+          contaazul_pessoas(
+            name
+          )
         )
       )
     `,
@@ -444,6 +454,11 @@ export async function getAllOperationsForExport({
         event_locations(
           formatted_address,
           raw_address
+        ),
+        new_events_contaazul_pessoas(
+          contaazul_pessoas(
+            name
+          )
         )
       )
     `,

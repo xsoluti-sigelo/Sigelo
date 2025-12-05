@@ -6,6 +6,7 @@ export interface OperationDisplay {
   event_id: string
   event_number: string
   event_title: string
+  client_name?: string | null
   operation_type: OperationType
   scheduled_date: string
   scheduled_time: string

@@ -9,59 +9,67 @@ export function exportOperationsToExcel(operations: OperationDisplay[]) {
       'Hora',
       'Tipo de Operação',
       'Status',
-      'Número do Evento',
       'Descrição do Evento',
-      'Local',
-      'Equipamentos STD',
-      'O.F. STD',
-      'Equipamentos PCD',
-      'O.F. PCD',
+      'Cliente',
+      'Endereço',
+      'Equip. STD',
+      'Equip. PCD',
+      'Veículo',
       'Motorista',
-      'Ajudante',
       'Produtor Responsável',
       'Telefone do Produtor',
-      'Observações',
+      'Instruções',
     ]
 
-    const rows = operations.map((operation) => [
-      operation.scheduled_date,
-      operation.scheduled_time,
-      OperationTypeLabels[operation.operation_type],
-      OperationStatusLabels[operation.status],
-      operation.event_number,
-      operation.event_title,
-      operation.event_location || 'A definir',
-      operation.equipment_std || 0,
-      operation.of_number_std || '',
-      operation.equipment_pcd || 0,
-      operation.of_number_pcd || '',
-      operation.driver_name || 'A definir',
-      operation.helper_name || '',
-      operation.producer_name || 'Não definido',
-      operation.producer_phone || '',
-      operation.observations || '',
-    ])
+    const rows = operations.map((operation) => {
+      // Build instructions text with STD/PCD quantities and O.F. numbers
+      const instructionsParts: string[] = []
+      if ((operation.equipment_std || 0) > 0) {
+        const ofStd = operation.of_number_std ? ` - OF ${operation.of_number_std}` : ''
+        instructionsParts.push(`STD: ${operation.equipment_std}${ofStd}`)
+      }
+      if ((operation.equipment_pcd || 0) > 0) {
+        const ofPcd = operation.of_number_pcd ? ` - OF ${operation.of_number_pcd}` : ''
+        instructionsParts.push(`PCD: ${operation.equipment_pcd}${ofPcd}`)
+      }
+      const instructionsText = instructionsParts.join(', ') || '-'
+
+      return [
+        operation.scheduled_date,
+        operation.scheduled_time,
+        OperationTypeLabels[operation.operation_type],
+        OperationStatusLabels[operation.status],
+        operation.event_title,
+        operation.client_name || 'Sem cliente',
+        operation.event_location || 'A definir',
+        operation.equipment_std || 0,
+        operation.equipment_pcd || 0,
+        operation.vehicle_license_plate || '',
+        operation.driver_name || 'A definir',
+        operation.producer_name || 'Não definido',
+        operation.producer_phone || '',
+        instructionsText,
+      ]
+    })
 
     const wsData = [headers, ...rows]
     const ws = XLSX.utils.aoa_to_sheet(wsData)
 
     const colWidths = [
-      { wch: 12 },
-      { wch: 8 },
-      { wch: 18 },
-      { wch: 12 },
-      { wch: 15 },
-      { wch: 30 },
-      { wch: 35 },
-      { wch: 12 },
-      { wch: 15 },
-      { wch: 12 },
-      { wch: 15 },
-      { wch: 20 },
-      { wch: 20 },
-      { wch: 25 },
-      { wch: 18 },
-      { wch: 30 },
+      { wch: 12 }, // Data
+      { wch: 8 },  // Hora
+      { wch: 18 }, // Tipo de Operação
+      { wch: 12 }, // Status
+      { wch: 35 }, // Descrição do Evento
+      { wch: 25 }, // Cliente
+      { wch: 35 }, // Endereço
+      { wch: 10 }, // Equip. STD
+      { wch: 10 }, // Equip. PCD
+      { wch: 12 }, // Veículo
+      { wch: 20 }, // Motorista
+      { wch: 25 }, // Produtor Responsável
+      { wch: 18 }, // Telefone do Produtor
+      { wch: 25 }, // Instruções
     ]
     ws['!cols'] = colWidths
 
