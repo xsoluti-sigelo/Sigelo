@@ -102,6 +102,11 @@ export async function getUsersWithInvites({
   }))
 
   const combined = [...users, ...invites].sort((a, b) => {
+    // Active users first, then inactive/invites
+    if (a.active !== b.active) {
+      return a.active ? -1 : 1
+    }
+    // Within same status, sort by created_at descending
     return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
   })
 
@@ -113,7 +118,5 @@ export async function getUsersWithInvites({
     data: paginatedData,
     totalPages,
     count: combined.length,
-    activeUsersCount: users.length,
-    pendingInvitesCount: invites.length,
   }
 }

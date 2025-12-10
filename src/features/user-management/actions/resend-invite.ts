@@ -59,10 +59,32 @@ export async function resendInvite(input: InviteActionInput): Promise<Result> {
       return { success: false, error: 'Erro ao reenviar convite' }
     }
 
-    logger.info('Invite token renewed - new link can be copied from invites table', {
-      inviteId,
-      email: invite.email,
+    // Send email with new invite link
+    const { inviteUserByEmail } = await import('@/shared/lib/supabase/admin')
+    const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/accept-invite?token=${inviteToken}`
+
+    const emailResult = await inviteUserByEmail(invite.email, {
+      redirectTo: inviteUrl,
+      data: {
+        invite_token: inviteToken,
+        tenant_id: tenantId,
+        role: invite.role,
+        full_name: invite.full_name,
+      },
     })
+
+    if (!emailResult.success) {
+      logger.warn('Invite renewed but email failed to send', {
+        inviteId,
+        email: invite.email,
+        emailError: emailResult.error,
+      })
+    } else {
+      logger.info('Invite email resent successfully', {
+        inviteId,
+        email: invite.email,
+      })
+    }
 
     await createActivityLog({
       action_type: 'UPDATE_USER',

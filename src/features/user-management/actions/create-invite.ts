@@ -152,8 +152,6 @@ export async function createInvite(input: CreateInviteInput): Promise<Result> {
       tenantId,
     })
 
-    revalidatePath(ROUTES.USERS_INVITES)
-
     return { success: true, inviteId: invite.id }
   } catch (error) {
     logger.error(

@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState } from 'react'
 import { PlusIcon } from '@heroicons/react/24/outline'
@@ -16,6 +16,7 @@ interface UsersHeaderProps {
 
 export function UsersHeader({ totalCount }: UsersHeaderProps) {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
+
   const { filters, setFilters } = useListFilters({
     initialFilters: {
       search: '',

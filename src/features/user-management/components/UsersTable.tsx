@@ -14,6 +14,7 @@ import { getRoleLabel } from '@/shared/lib/labels'
 import { UserAvatar } from './UserAvatar'
 import { UserStatusBadge } from './UserStatusBadge'
 import { UserRoleEditor } from './UserRoleEditor'
+import { InviteActions } from './InviteActions'
 
 interface UsersTableProps {
   users: UserListItem[]
@@ -25,7 +26,7 @@ interface UsersTableProps {
 
 export function UsersTable({ users, currentPage, totalPages, totalItems, itemsPerPage }: UsersTableProps) {
   const router = useRouter()
-  const { handlePageChange, handleItemsPerPageChange } = usePagination({ route: '/users' })
+  const { handlePageChange, handleItemsPerPageChange } = usePagination({ route: '/usuarios' })
   const [isPending, startTransition] = useTransition()
   const [editingUserId, setEditingUserId] = useState<string | null>(null)
   const [newRole, setNewRole] = useState<'ADMIN' | 'OPERATOR' | 'VIEWER'>('OPERATOR')
@@ -117,6 +118,15 @@ export function UsersTable({ users, currentPage, totalPages, totalItems, itemsPe
             : formatLastLogin(row.last_login_at)}
         </div>
       ),
+    },
+    {
+      header: '',
+      accessor: (row) => {
+        if (row.is_invite && row.invite_id) {
+          return <InviteActions inviteId={row.invite_id} inviteStatus={row.invite_status} />
+        }
+        return null
+      },
     },
   ]
 

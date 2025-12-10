@@ -32,7 +32,13 @@ export default async function UsuariosPage({ searchParams }: PageProps) {
 
         <UsersHeader totalCount={count} />
 
-        <UsersTable users={data as never} currentPage={page} totalPages={totalPages} />
+        <UsersTable
+          users={data as never}
+          currentPage={page}
+          totalPages={totalPages}
+          totalItems={count}
+          itemsPerPage={10}
+        />
       </div>
     </div>
   )
