@@ -3,7 +3,6 @@ export type {
   OrderFulfillmentItem,
   EventAttachment,
   EventIssue,
-  EventServiceItem,
   EventProducer,
   EventProducerDb,
   InvoiceGenerationLog,
@@ -18,7 +17,6 @@ export type { EventChangeLogRecord } from '@/entities/event-change-log'
 import type {
   EventWithFinancialData,
   OrderFulfillment,
-  EventServiceItem,
   EventProducerDb,
   EventAttachment,
   EventIssue,
@@ -35,7 +33,6 @@ export interface EventDetailsProps {
   operationsCount: number
   delegationStatus: DelegationStatus
   orderFulfillments: OrderFulfillment[]
-  eventServiceItems?: EventServiceItem[]
   eventProducers?: EventProducerDb[]
   attachments: EventAttachment[]
   invoices?: Array<{

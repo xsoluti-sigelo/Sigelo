@@ -64,16 +64,6 @@ export interface UpdateNewEventFullData {
   }>
 
   services?: string[]
-  eventServices?: Array<{
-    id?: string
-    contaazul_service_id: string
-    quantity: number
-    unit_price: number
-    daily_rate: number
-    total_price: number
-    notes?: string
-    order_id?: string
-  }>
 
   locationData?: {
     raw_address: string
@@ -369,59 +359,6 @@ export async function updateNewEventFull(
         }))
 
         await supabase.from('new_events_contaazul_services').insert(serviceLinks)
-      }
-    }
-
-    if (data.eventServices) {
-      const now = new Date().toISOString()
-
-      const { data: existingServices } = await supabase
-        .from('event_service_items' as never)
-        .select('id')
-        .eq('event_id', eventId)
-
-      const existingServiceIds = existingServices?.map((s: { id: string }) => s.id) || []
-      const providedServiceIds = data.eventServices.filter((s) => s.id).map((s) => s.id as string)
-
-      const serviceIdsToDelete = existingServiceIds.filter((id) => !providedServiceIds.includes(id))
-      if (serviceIdsToDelete.length > 0) {
-        await supabase
-          .from('event_service_items' as never)
-          .delete()
-          .in('id', serviceIdsToDelete)
-      }
-
-      for (const service of data.eventServices) {
-        if (service.id) {
-          await supabase
-            .from('event_service_items' as never)
-            .update({
-              contaazul_service_id: service.contaazul_service_id,
-              quantity: service.quantity,
-              unit_price: service.unit_price,
-              daily_rate: service.daily_rate,
-              total_price: service.total_price,
-              notes: service.notes || null,
-              updated_by: userId,
-              updated_at: now,
-            } as never)
-            .eq('id', service.id)
-        } else {
-          await supabase.from('event_service_items' as never).insert({
-            event_id: eventId,
-            tenant_id,
-            contaazul_service_id: service.contaazul_service_id,
-            quantity: service.quantity,
-            unit_price: service.unit_price,
-            daily_rate: service.daily_rate,
-            total_price: service.total_price,
-            notes: service.notes || null,
-            created_by: userId,
-            updated_by: userId,
-            created_at: now,
-            updated_at: now,
-          } as never)
-        }
       }
     }
 

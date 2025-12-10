@@ -53,18 +53,6 @@ async function getEventData(eventId: string, tenantId: string): Promise<EventDat
             category
           )
         )
-      ),
-      event_service_items(
-        id,
-        quantity,
-        unit_price,
-        total_price,
-        daily_rate,
-        contaazul_services(
-          contaazul_id,
-          name,
-          rate
-        )
       )
     `,
     )
@@ -228,7 +216,7 @@ export async function generateInvoiceFromEvent(
     const dailyRates = calculateDailyRates(startDatetime, endDatetime)
 
     for (const of of activeOFs) {
-      const ofItems = buildSaleItemsForOF(of, event.event_service_items, dailyRates)
+      const ofItems = buildSaleItemsForOF(of, dailyRates)
       if (ofItems.length === 0) {
         logger.info(`O.F. ${of.of_number} has no items to invoice`, {
           eventId,

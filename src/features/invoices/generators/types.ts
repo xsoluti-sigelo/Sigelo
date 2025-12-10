@@ -43,25 +43,11 @@ export interface EventData {
       }
     }>
   }>
-  event_service_items?: Array<{
-    id: string
-    quantity: number
-    unit_price: number
-    total_price: number
-    daily_rate: number
-    contaazul_services?: {
-      contaazul_id?: string
-      name?: string
-      rate?: number
-    } | null
-  }>
 }
 
 export type OrderFulfillment = NonNullable<EventData['order_fulfillments']>[number]
-export type EventServiceItem = NonNullable<EventData['event_service_items']>[number]
 
 export type SaleItemsBuilder = (
   of: OrderFulfillment,
-  eventServices: EventServiceItem[] | undefined,
   dailyRates?: number,
 ) => ContaAzulSaleItem[]

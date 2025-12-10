@@ -22,7 +22,6 @@ export function EventDetailsWithTabs({
   operationsCount,
   delegationStatus,
   orderFulfillments,
-  eventServiceItems = [],
   eventProducers = [],
   attachments,
   invoices = [],
@@ -32,10 +31,7 @@ export function EventDetailsWithTabs({
   invoicedOrderIds = [],
   historyLogs = [],
 }: EventDetailsProps) {
-  const totalEventValue =
-    eventServiceItems.length > 0
-      ? eventServiceItems.reduce((sum, item) => sum + item.total_price, 0)
-      : calculateTotalEventValue(orderFulfillments)
+  const totalEventValue = calculateTotalEventValue(orderFulfillments)
 
   const tabs: EventDetailsTab[] = [
     {
@@ -57,7 +53,6 @@ export function EventDetailsWithTabs({
         <FinancialTab
           event={event}
           orderFulfillments={orderFulfillments}
-          eventServiceItems={eventServiceItems}
           operations={operations}
           existingInvoiceLog={existingInvoiceLog}
           invoicedOrderIds={invoicedOrderIds}

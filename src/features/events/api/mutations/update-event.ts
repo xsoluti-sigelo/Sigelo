@@ -186,48 +186,16 @@ export async function updateEvent(eventId: string, formData: unknown): Promise<U
       locationUpdated = true
     }
 
-    let servicesUpdated = false
-    if (data.services && data.services.length > 0) {
-      await supabase
-        .from('event_service_items' as never)
-        .delete()
-        .eq('event_id', eventId)
-        .eq('tenant_id', tenantId)
-
-      const serviceItems = data.services.map((service) => ({
-        tenant_id: tenantId,
-        event_id: eventId,
-        contaazul_service_id: service.contaazul_service_id,
-        quantity: service.quantity,
-        unit_price: service.unit_price,
-        daily_rate: service.daily_rate,
-        total_price: service.total_price,
-        notes: service.notes || null,
-        created_by: userId,
-        updated_by: userId,
-      }))
-
-      const { error: servicesError } = await supabase
-        .from('event_service_items' as never)
-        .insert(serviceItems as never)
-
-      if (!servicesError) {
-        servicesUpdated = true
-      }
-    }
-
-    if (changedFields.length === 0 && (servicesUpdated || locationUpdated)) {
+    if (changedFields.length === 0 && locationUpdated) {
       await createActivityLog({
         action_type: 'UPDATE_EVENT',
         entity_type: 'event',
         entity_id: eventId,
         new_value: {
-          services_updated: servicesUpdated as unknown as JsonValue,
           location_updated: locationUpdated as unknown as JsonValue,
         },
         metadata: {
           event_number: (currentEvent as never)['event_number'],
-          services_count: (data.services?.length || 0) as unknown as JsonValue,
         },
       })
     }

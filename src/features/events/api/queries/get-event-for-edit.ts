@@ -71,12 +71,6 @@ export async function getEventForEdit(id: string) {
           .in('order_item_id', orderItemIds)
       : { data: [] }
 
-  const { data: customEventServices } = await supabase
-    .from('event_service_items' as never)
-    .select('*')
-    .eq('event_id', id)
-    .order('created_at')
-
   const { data: locationData } = await supabase
     .from('event_locations')
     .select('*')
@@ -96,7 +90,6 @@ export async function getEventForEdit(id: string) {
     orders: orders || [],
     eventServices: eventServices || [],
     itemServices: itemServices || [],
-    customEventServices: customEventServices || [],
     locationData: locationData || null,
     attachments: attachments || [],
     userRole: userData.role,

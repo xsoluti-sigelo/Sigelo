@@ -60,7 +60,6 @@ export default async function EventDetailPage({ params }: PageProps) {
     financialData,
     parsedCleaningRule,
     eventProducers,
-    eventServiceItems,
     attachments,
     invoices,
     invoice,
@@ -90,7 +89,6 @@ export default async function EventDetailPage({ params }: PageProps) {
           operationsCount={operationsCount}
           delegationStatus={delegationStatus}
           orderFulfillments={orderFulfillments}
-          eventServiceItems={eventServiceItems}
           eventProducers={eventProducers}
           attachments={attachments}
           invoices={invoices}

@@ -103,19 +103,3 @@ export interface CalculateDailyRateParams {
   selectedWeekdays?: number[]
   cleaningWeekdays?: number[]
 }
-
-export interface EventServiceItem {
-  id: string
-  contaazul_service_id: string
-  quantity: number
-  unit_price: number
-  daily_rate: number
-  total_price: number
-  notes: string | null
-  contaazul_services?: {
-    id: string
-    contaazul_id: string
-    name: string
-    rate: number
-  }
-}

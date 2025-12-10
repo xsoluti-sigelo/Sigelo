@@ -13,7 +13,6 @@ import { GenerateOrderInvoiceButton } from '@/features/invoices/components/new-e
 import {
   EventWithFinancialData,
   OrderFulfillment,
-  EventServiceItem,
   InvoiceGenerationLog,
 } from './types'
 import {
@@ -32,7 +31,6 @@ const getItemUnitPrice = (item: OrderFulfillmentItem): number => {
 interface FinancialTabProps {
   event: EventWithFinancialData
   orderFulfillments: OrderFulfillment[]
-  eventServiceItems: EventServiceItem[]
   operations: OperationDisplay[]
   existingInvoiceLog?: InvoiceGenerationLog | null
   invoicedOrderIds?: string[]
@@ -42,7 +40,6 @@ interface FinancialTabProps {
 export function FinancialTab({
   event,
   orderFulfillments,
-  eventServiceItems,
   operations,
   existingInvoiceLog,
   invoicedOrderIds = [],
@@ -274,77 +271,6 @@ export function FinancialTab({
               </div>
             </div>
           )}
-        </div>
-      )}
-
-      {eventServiceItems.length > 0 && (
-        <div className="mb-6">
-          <h3 className="text-md font-semibold text-gray-900 dark:text-gray-100 mb-4">
-            Serviços contratados
-          </h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg">
-              <thead className="bg-gray-50 dark:bg-gray-800">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-                    Serviço
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
-                    Quantidade
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
-                    Diárias
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400">
-                    Valor unit.
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400">
-                    Valor total
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {eventServiceItems.map((service) => (
-                  <tr key={service.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                    <td className="px-4 py-3 text-gray-900 dark:text-gray-100">
-                      {service.contaazul_services?.name || 'Serviço'}
-                    </td>
-                    <td className="px-4 py-3 text-center text-gray-900 dark:text-gray-100">
-                      {service.quantity}
-                    </td>
-                    <td className="px-4 py-3 text-center text-gray-900 dark:text-gray-100">
-                      {service.daily_rate}
-                    </td>
-                    <td className="px-4 py-3 text-right text-gray-900 dark:text-gray-100">
-                      {formatCurrency(service.unit_price)}
-                    </td>
-                    <td className="px-4 py-3 text-right font-semibold text-gray-900 dark:text-gray-100">
-                      {formatCurrency(service.total_price)}
-                    </td>
-                  </tr>
-                ))}
-                <tr className="bg-gray-50 dark:bg-gray-800 font-semibold">
-                  <td colSpan={4} className="px-4 py-3 text-right text-gray-900 dark:text-gray-100">
-                    Total dos serviços:
-                  </td>
-                  <td className="px-4 py-3 text-right text-teal-600 dark:text-teal-400">
-                    {formatCurrency(eventServiceItems.reduce((sum, s) => sum + s.total_price, 0))}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            {eventServiceItems.some((s) => s.notes) && (
-              <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                {eventServiceItems
-                  .filter((s) => s.notes)
-                  .map((s) => (
-                    <div key={s.id}>
-                      <strong>{s.contaazul_services?.name}:</strong> {s.notes}
-                    </div>
-                  ))}
-              </div>
-            )}
-          </div>
         </div>
       )}
 

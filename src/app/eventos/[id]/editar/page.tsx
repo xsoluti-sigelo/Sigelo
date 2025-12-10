@@ -53,7 +53,6 @@ export default async function EditEventPage({ params }: PageProps) {
     orders,
     eventServices,
     itemServices,
-    customEventServices,
     locationData,
     attachments,
     userRole,
@@ -110,26 +109,6 @@ export default async function EditEventPage({ params }: PageProps) {
       : '',
     source: event.source || null,
     services: eventServices.map((s) => s.service_id),
-    eventServices: customEventServices.map(
-      (s: {
-        id: string
-        contaazul_service_id: string
-        quantity: number
-        unit_price: number
-        daily_rate: number
-        total_price: number
-        notes: string | null
-      }) => ({
-        id: s.id,
-        contaazul_service_id: s.contaazul_service_id,
-        quantity: s.quantity,
-        unit_price: s.unit_price,
-        daily_rate: s.daily_rate,
-        total_price: s.total_price,
-        notes: s.notes || undefined,
-        order_id: undefined,
-      }),
-    ),
     people: people.map((p) => ({
       id: p.id,
       name: p.name || '',

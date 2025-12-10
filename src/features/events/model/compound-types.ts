@@ -2,7 +2,6 @@ import type { EventDisplay } from './entity-event-types'
 import type { EventParty } from './shared-types'
 import type { OrderFulfillment } from './order-types'
 import type { EventAttachment } from './attachment-types'
-import type { EventServiceItem } from './event-types'
 import type { EventProducer } from './producer-types'
 import type { InvoiceGenerationLog } from './invoice-types'
 import type { OperationDisplay } from '@/features/operations'
@@ -28,7 +27,6 @@ export interface EventDetailsData {
   operationsCount: number
   delegationStatus: DelegationStatus
   orderFulfillments: OrderFulfillment[]
-  eventServiceItems: EventServiceItem[]
   eventProducers: EventProducer[]
   attachments: EventAttachment[]
   invoice: EventInvoice | null

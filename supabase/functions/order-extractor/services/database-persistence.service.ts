@@ -1040,6 +1040,7 @@ export class DatabasePersistenceService {
           serviceLinks.push({
             event_id: eventId,
             service_id: serviceId,
+            tenant_id: this.tenantId,
           })
         } else {
           logger.warn('Serviço não mapeado no ContaAzul', {
@@ -1109,6 +1110,7 @@ export class DatabasePersistenceService {
           itemServiceLinks.push({
             order_item_id: itemId,
             service_id: serviceId,
+            tenant_id: this.tenantId,
           })
         } else {
           logger.warn('Item não mapeado para serviço do ContaAzul', {

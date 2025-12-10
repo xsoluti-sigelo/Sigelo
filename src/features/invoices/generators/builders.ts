@@ -1,7 +1,6 @@
 import type { ContaAzulSaleItem } from '@/features/integrations/contaazul'
 import { PRODUCT_IDS, PAYMENT_INFO_LINES } from './constants'
-import type { EventData, EventServiceItem, OrderFulfillment } from './types'
-import { logger } from '@/shared/lib/logger'
+import type { EventData, OrderFulfillment } from './types'
 
 export function calculateDailyRates(startDatetime: string, endDatetime: string): number {
   const start = new Date(startDatetime)
@@ -47,14 +46,6 @@ export function buildInvoiceNotes(event: EventData): string {
     `PERÍODO: de ${startDate} até ${endDate}, de ${startTime}h até ${endTime}h`,
   ]
 
-  const hasServices = !!(event.event_service_items && event.event_service_items.length > 0)
-  if (hasServices && event.event_service_items!.some((s) => s.daily_rate > 0)) {
-    const dailyRates = calculateDailyRates(startDatetime, endDatetime)
-    lines.push('')
-    lines.push('-: DIÁRIA(s) :-')
-    lines.push(`${startDate} à ${endDate} 1ª Diária x${dailyRates}`)
-  }
-
   lines.push('')
   lines.push(
     'A ATIVIDADE DE LOCAÇÃO DE BENS MÓVEIS É ISENTA DE EMISSÃO DE NOTA FISCAL CONFORME LEI Nº 8.846 DE 21/01/94.',
@@ -65,35 +56,9 @@ export function buildInvoiceNotes(event: EventData): string {
 
 export function buildSaleItemsForOF(
   of: OrderFulfillment,
-  eventServices?: EventServiceItem[],
   dailyRates?: number,
 ): ContaAzulSaleItem[] {
   const items: ContaAzulSaleItem[] = []
-
-  if (eventServices && eventServices.length > 0) {
-    for (const s of eventServices) {
-      const serviceId = s.contaazul_services?.contaazul_id
-      if (!serviceId) {
-        logger.warn('Service without contaazul_id', { serviceId: s.id })
-        continue
-      }
-
-      const description = s.contaazul_services?.name || 'Serviço'
-      const fullDescription =
-        s.daily_rate > 0 && dailyRates
-          ? `${description}\n${dailyRates} DIÁRIA${dailyRates > 1 ? 'S' : ''}`
-          : description
-
-      items.push({
-        service: { id: serviceId },
-        quantity: s.quantity,
-        unitPrice: s.unit_price,
-        total: s.total_price,
-        description: fullDescription,
-      })
-    }
-    return items
-  }
 
   if (of.of_items && of.of_items.length > 0) {
     for (const item of of.of_items) {

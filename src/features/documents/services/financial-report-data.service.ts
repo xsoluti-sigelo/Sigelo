@@ -6,18 +6,6 @@ import type { FinancialReportData } from '../types/financial-report.types'
 type NewOrderRow = Database['public']['Tables']['new_orders']['Row']
 type NewOrderItemRow = Database['public']['Tables']['new_order_items']['Row']
 
-interface EventServiceItemRow {
-  id: string
-  quantity: number
-  unit_price: number
-  daily_rate: number
-  total_price: number
-  notes: string | null
-  contaazul_services?: {
-    name: string | null
-  } | null
-}
-
 type EventWithClient = Database['public']['Tables']['new_events']['Row'] & {
   new_events_contaazul_pessoas?: Array<{
     contaazul_pessoas?: {
@@ -37,10 +25,9 @@ export class FinancialReportDataService {
 
   async generateReportData(eventId: string): Promise<FinancialReportData | null> {
     try {
-      const [event, orders, serviceItems, financialData] = await Promise.all([
+      const [event, orders, financialData] = await Promise.all([
         this.fetchEvent(eventId),
         this.fetchOrders(eventId),
-        this.fetchServices(eventId),
         this.fetchFinancialData(eventId),
       ])
 
@@ -52,16 +39,12 @@ export class FinancialReportDataService {
         ?.contaazul_pessoas
       const contractName = this.formatContractName(event)
 
-      const servicesData = this.transformServices(serviceItems || [])
       const ordersData = this.transformOrders(orders || [])
 
-      const servicesTotal = servicesData.reduce((sum, item) => sum + item.totalValue, 0)
-      const ordersTotal = ordersData.reduce(
+      const totalValue = ordersData.reduce(
         (sum, order) => sum + (order.status === 'cancelled' ? 0 : order.totalValue),
         0,
       )
-
-      const totalValue = servicesData.length > 0 ? servicesTotal : ordersTotal
       const eventEndDate = event.end_date || event.date || null
       const payments = this.generatePaymentSchedule(financialData, totalValue, eventEndDate)
 
@@ -80,7 +63,7 @@ export class FinancialReportDataService {
           installments: financialData?.quantity ?? 1,
           installmentFrequency: financialData?.payment_method || 'Única',
         },
-        services: servicesData,
+        services: [],
         orders: ordersData,
         payments,
         summary: {
@@ -141,33 +124,6 @@ export class FinancialReportDataService {
     return data
   }
 
-  private async fetchServices(eventId: string) {
-    const { data, error } = await this.supabase
-      .from('event_service_items' as never)
-      .select(
-        `
-          id,
-          quantity,
-          unit_price,
-          daily_rate,
-          total_price,
-          notes,
-          contaazul_services!contaazul_service_id(
-            name
-          )
-        `,
-      )
-      .eq('event_id', eventId)
-      .eq('tenant_id', this.tenantId)
-
-    if (error) {
-      logger.error('Error fetching services', error)
-      return []
-    }
-
-    return data
-  }
-
   private async fetchFinancialData(eventId: string) {
     const { data, error } = await this.supabase
       .from('event_financial_data')
@@ -189,17 +145,6 @@ export class FinancialReportDataService {
       return `${event.number} ${event.year} - ${event.name}`
     }
     return event.name || '-'
-  }
-
-  private transformServices(serviceItems: EventServiceItemRow[]) {
-    return serviceItems.map((service) => ({
-      id: service.id,
-      name: service.contaazul_services?.name || 'Serviço',
-      quantity: Number(service.quantity || 0),
-      dailyRate: Number(service.daily_rate || 0),
-      unitValue: Number(service.unit_price || 0),
-      totalValue: Number(service.total_price || 0),
-    }))
   }
 
   private transformOrders(orders: OrderWithItems[]) {

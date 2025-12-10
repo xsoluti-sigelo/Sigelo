@@ -15,7 +15,6 @@ import type {
   EventFinancialData,
   EventProducerDb,
   FullEventData,
-  EventServiceItem,
 } from '../model'
 import type { EventChangeLogRecord } from '@/entities/event-change-log'
 import type { Issue } from '@/features/issues'
@@ -31,7 +30,6 @@ export interface EventDetailsData {
   fullEventData: FullEventData
   parsedCleaningRule: CleaningRule | null
   eventProducers: EventProducerDb[]
-  eventServiceItems: EventServiceItem[]
   attachments: Awaited<ReturnType<typeof getEventAttachments>>
   invoices: Awaited<ReturnType<typeof getEventInvoices>>
   invoice: Awaited<ReturnType<typeof getEventInvoice>>
@@ -57,7 +55,6 @@ export async function getEventDetails(eventId: string): Promise<EventDetailsData
     { data: financialData },
     { data: fullEventData },
     { data: eventProducers },
-    { data: eventServiceItems },
     attachments,
     invoices,
     invoice,
@@ -93,27 +90,6 @@ export async function getEventDetails(eventId: string): Promise<EventDetailsData
       .select('*')
       .eq('event_id', eventId)
       .in('role', ['producer', 'coordinator']),
-    supabase
-      .from('event_service_items' as never)
-      .select(
-        `
-        id,
-        contaazul_service_id,
-        quantity,
-        unit_price,
-        daily_rate,
-        total_price,
-        notes,
-        contaazul_services!contaazul_service_id(
-          id,
-          contaazul_id,
-          name,
-          rate
-        )
-      `,
-      )
-      .eq('event_id', eventId)
-      .eq('tenant_id', tenant_id),
     getEventAttachments(eventId),
     getEventInvoices(eventId),
     getEventInvoice(eventId),
@@ -170,7 +146,6 @@ export async function getEventDetails(eventId: string): Promise<EventDetailsData
     },
     parsedCleaningRule: null,
     eventProducers: (eventProducers || []) as EventProducerDb[],
-    eventServiceItems: (eventServiceItems || []) as EventServiceItem[],
     attachments,
     invoices,
     invoice,
