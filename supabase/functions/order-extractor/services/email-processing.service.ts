@@ -116,12 +116,30 @@ export class EmailProcessingService {
         )
       }
 
-      // 2. Verificar se o email está cancelado ou se faltam dados essenciais
+      // 2. Verificar se o email é de cancelamento
       if (extractedData.isCancelled) {
-        logger.info('Email cancelado - pulando cálculo MOLIDE')
-        result.warnings?.push('Email de cancelamento - MOLIDE não calculado')
-        result.success = true
+        logger.info('Email de cancelamento detectado - processando cancelamento')
+
+        // Persistir email de cancelamento e atualizar evento/ordens
+        const cancellationResult = await this.processCancellationEmail(
+          extractedData,
+          request.userId,
+          request.rawContent,
+          request.subject,
+          request.sender,
+          new Date(request.receivedAt),
+        )
+
+        result.emailId = cancellationResult.emailId
+        result.eventId = cancellationResult.eventId
+        result.warnings?.push('Email de cancelamento processado - evento marcado como cancelado')
+        result.success = cancellationResult.success
         result.processingTime = Date.now() - startTime
+
+        if (!cancellationResult.success) {
+          result.errors?.push(...(cancellationResult.errors || []))
+        }
+
         return result
       }
 
@@ -316,6 +334,174 @@ export class EmailProcessingService {
       coordinators: extractedData.coordinators?.parsed,
       dailies: extractedData.dailies?.parsed, // Lista de datas específicas de uso
       isCancelled: extractedData.isCancelled,
+    }
+  }
+
+  /**
+   * Processa email de cancelamento: persiste o email e marca evento/ordens como cancelados
+   */
+  private async processCancellationEmail(
+    extractedData: ExtractedEmailData,
+    userId: string,
+    rawContent: string,
+    subject: string,
+    sender: string,
+    receivedAt: Date,
+  ): Promise<{
+    success: boolean
+    emailId?: string
+    eventId?: string
+    errors?: string[]
+  }> {
+    const errors: string[] = []
+
+    try {
+      logger.info('Processando email de cancelamento', {
+        eventNumber: extractedData.event.id,
+        year: extractedData.event.year,
+        orderId: extractedData.subject.orderId,
+      })
+
+      // 1. Gerar IDs
+      const emailId = `email-cancel-${extractedData.event.id}-${extractedData.subject.orderId}`
+      const eventId = `event-${extractedData.event.id}-${extractedData.event.year}`
+      const orderId = `order-${extractedData.subject.orderId}`
+
+      // 2. Persistir email de cancelamento
+      const { data: existingEmail } = await this.supabase
+        .from('new_emails')
+        .select('id')
+        .eq('id', emailId)
+        .maybeSingle()
+
+      if (!existingEmail) {
+        const { error: emailError } = await this.supabase.from('new_emails').insert({
+          id: emailId,
+          tenant_id: this.persistenceService['tenantId'],
+          subject,
+          sender,
+          received_at: receivedAt.toISOString(),
+          raw_content: rawContent,
+          extracted_data: extractedData,
+          status: 'processed',
+        })
+
+        if (emailError) {
+          logger.error('Erro ao persistir email de cancelamento', emailError)
+          errors.push(`Falha ao persistir email: ${emailError.message}`)
+        } else {
+          logger.info('Email de cancelamento persistido', { emailId })
+        }
+      } else {
+        logger.info('Email de cancelamento já existe', { emailId })
+      }
+
+      // 3. Buscar evento existente pelo número e ano
+      const { data: existingEvent } = await this.supabase
+        .from('new_events')
+        .select('id, number, year, is_cancelled')
+        .eq('number', extractedData.event.id)
+        .eq('year', extractedData.event.year)
+        .maybeSingle()
+
+      if (existingEvent) {
+        if (!existingEvent.is_cancelled) {
+          // 4. Marcar evento como cancelado
+          const { error: updateEventError } = await this.supabase
+            .from('new_events')
+            .update({
+              is_cancelled: true,
+              status: 'CANCELLED',
+            })
+            .eq('id', existingEvent.id)
+
+          if (updateEventError) {
+            logger.error('Erro ao marcar evento como cancelado', updateEventError)
+            errors.push(`Falha ao cancelar evento: ${updateEventError.message}`)
+          } else {
+            logger.info('Evento marcado como cancelado', {
+              eventId: existingEvent.id,
+              number: extractedData.event.id,
+            })
+          }
+
+          // 5. Marcar a ordem específica como cancelada pelo número da O.F.
+          const orderNumber = extractedData.subject.orderId
+          logger.info('Buscando O.F. para cancelar', { orderNumber })
+
+          const { data: updatedOrders, error: updateOrdersError } = await this.supabase
+            .from('new_orders')
+            .update({
+              is_cancelled: true,
+              status: 'CANCELLED',
+              cancellation_reason: extractedData.cancellationReason || 'Cancelado conforme email',
+            })
+            .eq('number', orderNumber)
+            .select('id, number')
+
+          if (updateOrdersError) {
+            logger.error('Erro ao marcar ordem como cancelada', {
+              orderNumber,
+              error: updateOrdersError,
+            })
+            errors.push(`Falha ao cancelar ordem ${orderNumber}: ${updateOrdersError.message}`)
+          } else if (!updatedOrders || updatedOrders.length === 0) {
+            logger.warn('Nenhuma O.F. encontrada para cancelar', { orderNumber })
+            errors.push(`O.F. ${orderNumber} não encontrada para cancelamento`)
+          } else {
+            logger.info('O.F. marcada como cancelada', {
+              orderNumber,
+              orderId: updatedOrders[0].id,
+            })
+          }
+
+          // 6. Marcar operações como canceladas
+          const { error: updateOpsError } = await this.supabase
+            .from('new_operations')
+            .update({
+              status: 'CANCELLED',
+            })
+            .eq('event_id', existingEvent.id)
+
+          if (updateOpsError) {
+            logger.error('Erro ao marcar operações como canceladas', updateOpsError)
+          } else {
+            logger.info('Operações do evento marcadas como canceladas', {
+              eventId: existingEvent.id,
+            })
+          }
+        } else {
+          logger.info('Evento já estava cancelado', { eventId: existingEvent.id })
+        }
+
+        return {
+          success: errors.length === 0,
+          emailId,
+          eventId: existingEvent.id,
+          errors: errors.length > 0 ? errors : undefined,
+        }
+      } else {
+        // Evento não encontrado - pode ser um cancelamento antes da criação do evento
+        logger.warn('Evento não encontrado para cancelamento', {
+          eventNumber: extractedData.event.id,
+          year: extractedData.event.year,
+        })
+        errors.push(
+          `Evento ${extractedData.event.id}/${extractedData.event.year} não encontrado para cancelamento`,
+        )
+
+        return {
+          success: true, // Email foi salvo, mas evento não existia
+          emailId,
+          errors,
+        }
+      }
+    } catch (error) {
+      logger.error('Erro ao processar cancelamento', error)
+      return {
+        success: false,
+        errors: [`Erro interno: ${error}`],
+      }
     }
   }
 
