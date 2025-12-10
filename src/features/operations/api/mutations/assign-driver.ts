@@ -173,7 +173,7 @@ export async function removeDriverAssignment(input: RemoveAssignmentInput): Prom
       .select('molide_operation_id, party_id')
       .eq('id', assignmentId)
       .eq('tenant_id', tenantId)
-      .single()
+      .maybeSingle()
 
     let driverName: string | null = null
     let operationInfo: { event_id: string; driver: string | null } | null = null

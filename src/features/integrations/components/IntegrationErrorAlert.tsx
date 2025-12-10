@@ -1,12 +1,13 @@
 'use client'
 
-import { useSearchParams } from 'next/navigation'
-import { XCircleIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
+import { useEffect, useRef } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
+import { showSuccessToast, showErrorToast } from '@/shared/lib/toast'
 
 const ERROR_MESSAGES: Record<string, string> = {
   auth_failed: 'Falha na autenticação com Conta Azul. Tente novamente.',
   config_missing:
-    'Configuração do Conta Azul não encontrada. Verifique as variáveis de ambiente no Vercel: NEXT_PUBLIC_CONTA_AZUL_CLIENT_ID, CONTA_AZUL_CLIENT_SECRET, NEXT_PUBLIC_CONTA_AZUL_REDIRECT_URI',
+    'Configuração do Conta Azul não encontrada. Verifique as variáveis de ambiente.',
   user_not_authenticated: 'Usuário não autenticado. Faça login e tente novamente.',
   token_exchange_failed:
     'Falha ao trocar código por token. Verifique as credenciais do Conta Azul.',
@@ -22,53 +23,27 @@ const SUCCESS_MESSAGES: Record<string, string> = {
 
 export function IntegrationErrorAlert() {
   const searchParams = useSearchParams()
+  const router = useRouter()
+  const hasShownToast = useRef(false)
+
   const error = searchParams.get('error')
   const success = searchParams.get('success')
 
-  if (!error && !success) return null
+  useEffect(() => {
+    if (hasShownToast.current) return
 
-  if (success) {
-    const message = SUCCESS_MESSAGES[success] || 'Operação realizada com sucesso!'
-
-    return (
-      <div className="mb-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-        <div className="flex items-start gap-3">
-          <CheckCircleIcon className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
-          <div>
-            <h3 className="text-sm font-medium text-green-800 dark:text-green-200">{message}</h3>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    const message = ERROR_MESSAGES[error] || `Erro desconhecido: ${error}`
-
-    return (
-      <div className="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-        <div className="flex items-start gap-3">
-          <XCircleIcon className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-          <div>
-            <h3 className="text-sm font-medium text-red-800 dark:text-red-200 mb-1">
-              Erro na Integração
-            </h3>
-            <p className="text-sm text-red-700 dark:text-red-300">{message}</p>
-            {error === 'config_missing' && (
-              <p className="text-xs text-red-600 dark:text-red-400 mt-2">
-                <strong>Variáveis necessárias no Vercel:</strong>
-                <br />
-                • NEXT_PUBLIC_CONTA_AZUL_CLIENT_ID
-                <br />
-                • CONTA_AZUL_CLIENT_SECRET
-                <br />• NEXT_PUBLIC_CONTA_AZUL_REDIRECT_URI
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-    )
-  }
+    if (success) {
+      const message = SUCCESS_MESSAGES[success] || 'Operação realizada com sucesso!'
+      showSuccessToast(message)
+      hasShownToast.current = true
+      router.replace('/integracoes/conexao', { scroll: false })
+    } else if (error) {
+      const message = ERROR_MESSAGES[error] || `Erro: ${error}`
+      showErrorToast(message)
+      hasShownToast.current = true
+      router.replace('/integracoes/conexao', { scroll: false })
+    }
+  }, [error, success, router])
 
   return null
 }

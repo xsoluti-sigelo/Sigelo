@@ -53,7 +53,7 @@ export async function assignVehicle(
       .select('id, vehicle_id')
       .eq('molide_operation_id', operationId)
       .eq('tenant_id', tenantId)
-      .single()
+      .maybeSingle()
 
     let oldVehicleId: string | null = null
     let oldVehiclePlate: string | null = null
@@ -187,7 +187,7 @@ export async function removeVehicleAssignment(input: RemoveAssignmentInput): Pro
       .select('molide_operation_id, vehicle_id')
       .eq('id', assignmentId)
       .eq('tenant_id', tenantId)
-      .single()
+      .maybeSingle()
 
     let vehiclePlate: string | null = null
     let operationInfo: { event_id: string; vehicle: string | null } | null = null
