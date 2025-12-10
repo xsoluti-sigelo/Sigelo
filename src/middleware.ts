@@ -7,6 +7,12 @@ export async function middleware(request: NextRequest) {
     request,
   })
 
+  const pathname = request.nextUrl.pathname
+
+  if (pathname === ROUTES.AUTH_CALLBACK || pathname.startsWith('/api/auth/')) {
+    return supabaseResponse
+  }
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -27,8 +33,6 @@ export async function middleware(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser()
-
-  const pathname = request.nextUrl.pathname
 
   const code = request.nextUrl.searchParams.get('code')
   if (code && pathname !== ROUTES.AUTH_CALLBACK && !pathname.startsWith('/api/contaazul/')) {
