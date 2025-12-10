@@ -22,17 +22,19 @@ export class AttachmentStorageService {
 
   /**
    * Salva um anexo no Supabase Storage
+   * Path: {tenantId}/emails/{eventId}/of_{ofNumber}/of_{ofNumber}_{randomId}.{ext}
    */
   async saveAttachment(
     eventId: string,
-    emailId: string,
+    ofNumber: string,
     attachment: GmailAttachment,
     content: Uint8Array,
   ): Promise<StoredAttachment | null> {
     try {
-      // Sanitizar filename para evitar problemas
-      const safeFilename = this.sanitizeFilename(attachment.filename)
-      const storagePath = `${this.tenantId}/emails/${eventId}/${emailId}/${safeFilename}`
+      const extension = this.getFileExtension(attachment.filename)
+      const randomId = this.generateRandomId()
+      const filename = `of_${ofNumber}_${randomId}.${extension}`
+      const storagePath = `${this.tenantId}/emails/${eventId}/of_${ofNumber}/${filename}`
 
       logger.info('Salvando anexo no storage', {
         storagePath,
@@ -40,31 +42,23 @@ export class AttachmentStorageService {
         size: content.length,
       })
 
-      // Upload para o bucket
-      const { data, error } = await this.supabase.storage
+      const { error } = await this.supabase.storage
         .from(BUCKET_NAME)
         .upload(storagePath, content, {
           contentType: attachment.mimeType,
-          upsert: true, // Substituir se já existir
+          upsert: true,
         })
 
       if (error) {
-        logger.error('Erro ao fazer upload do anexo', {
-          error,
-          storagePath,
-        })
+        logger.error('Erro ao fazer upload do anexo', { error, storagePath })
         return null
       }
 
-      // Obter URL pública (bucket é público)
       const {
         data: { publicUrl },
       } = this.supabase.storage.from(BUCKET_NAME).getPublicUrl(storagePath)
 
-      logger.info('Anexo salvo com sucesso', {
-        storagePath,
-        publicUrl,
-      })
+      logger.info('Anexo salvo com sucesso', { storagePath, publicUrl })
 
       return {
         filename: attachment.filename,
@@ -84,13 +78,13 @@ export class AttachmentStorageService {
    */
   async saveAttachments(
     eventId: string,
-    emailId: string,
+    ofNumber: string,
     attachments: Array<{ attachment: GmailAttachment; content: Uint8Array }>,
   ): Promise<StoredAttachment[]> {
     const results: StoredAttachment[] = []
 
     for (const { attachment, content } of attachments) {
-      const stored = await this.saveAttachment(eventId, emailId, attachment, content)
+      const stored = await this.saveAttachment(eventId, ofNumber, attachment, content)
       if (stored) {
         results.push(stored)
       }
@@ -101,13 +95,12 @@ export class AttachmentStorageService {
   }
 
   /**
-   * Remove anexos de um email
+   * Remove anexos de uma O.F.
    */
-  async deleteAttachments(eventId: string, emailId: string): Promise<boolean> {
+  async deleteAttachments(eventId: string, ofNumber: string): Promise<boolean> {
     try {
-      const folderPath = `${this.tenantId}/emails/${eventId}/${emailId}`
+      const folderPath = `${this.tenantId}/emails/${eventId}/of_${ofNumber}`
 
-      // Listar arquivos na pasta
       const { data: files, error: listError } = await this.supabase.storage
         .from(BUCKET_NAME)
         .list(folderPath)
@@ -122,7 +115,6 @@ export class AttachmentStorageService {
         return true
       }
 
-      // Deletar cada arquivo
       const filePaths = files.map((f) => `${folderPath}/${f.name}`)
       const { error: deleteError } = await this.supabase.storage
         .from(BUCKET_NAME)
@@ -141,15 +133,29 @@ export class AttachmentStorageService {
     }
   }
 
-  /**
-   * Sanitiza o nome do arquivo para evitar problemas no storage
-   */
   private sanitizeFilename(filename: string): string {
     return filename
       .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '') // Remove acentos
-      .replace(/[^a-zA-Z0-9._-]/g, '_') // Substitui caracteres especiais
-      .replace(/_+/g, '_') // Remove underscores duplicados
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9._-]/g, '_')
+      .replace(/_+/g, '_')
       .toLowerCase()
+  }
+
+  private getFileExtension(filename: string): string {
+    const parts = filename.split('.')
+    if (parts.length > 1) {
+      return parts[parts.length - 1].toLowerCase()
+    }
+    return 'bin'
+  }
+
+  private generateRandomId(): string {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
+    let result = ''
+    for (let i = 0; i < 8; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
+    return result
   }
 }

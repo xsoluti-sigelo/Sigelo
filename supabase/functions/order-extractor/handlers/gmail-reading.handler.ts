@@ -1,6 +1,7 @@
 import { createLogger } from '../utils/logger.ts'
 import { GmailReaderService, GmailSearchParams } from '../services/gmail-reader.service.ts'
 import { EmailProcessingService } from '../services/email-processing.service.ts'
+import { AttachmentStorageService } from '../services/attachment-storage.service.ts'
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7'
 import { env } from '../config/environment.ts'
 
@@ -203,8 +204,8 @@ export async function handleFetchAndProcess(
       googleMapsApiKey ?? '',
       env.app.defaultTenantId,
     )
+    const attachmentService = new AttachmentStorageService(supabase, env.app.defaultTenantId)
 
-    // Se archivedOnly = true, buscar apenas emails fora da INBOX
     const customQuery = archivedOnly ? '-in:inbox' : undefined
 
     const messages = await readerService.searchOrderEmails(
@@ -242,9 +243,37 @@ export async function handleFetchAndProcess(
         rawContent: message.body,
       })
 
+      // Salvar anexos se o processamento foi bem sucedido e há anexos
+      let savedAttachments = 0
+      if (processingResult.success && processingResult.eventId && message.attachments?.length > 0) {
+        const ofNumber = processingResult.extractedData?.subject?.orderId
+        if (ofNumber) {
+          logger.info(`Salvando ${message.attachments.length} anexos`, {
+            eventId: processingResult.eventId,
+            ofNumber,
+          })
+
+          for (const attachment of message.attachments) {
+            const content = await readerService.getAttachmentContent(message.id, attachment.attachmentId)
+            if (content) {
+              const stored = await attachmentService.saveAttachment(
+                processingResult.eventId,
+                ofNumber,
+                attachment,
+                content,
+              )
+              if (stored) savedAttachments++
+            }
+          }
+
+          logger.info(`${savedAttachments}/${message.attachments.length} anexos salvos`)
+        }
+      }
+
       results.push({
         messageId: message.id,
         subject: message.subject,
+        savedAttachments,
         ...processingResult,
       })
 

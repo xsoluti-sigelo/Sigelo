@@ -3,6 +3,13 @@ import { GmailAuthService } from './gmail-auth.service.ts'
 
 const logger = createLogger({ service: 'GmailReaderService' })
 
+export interface GmailAttachment {
+  attachmentId: string
+  filename: string
+  mimeType: string
+  size: number
+}
+
 export interface GmailMessage {
   id: string
   threadId: string
@@ -15,6 +22,7 @@ export interface GmailMessage {
   date: string
   body: string
   bodyHtml?: string
+  attachments: GmailAttachment[]
 }
 
 export interface GmailSearchParams {
@@ -139,6 +147,7 @@ export class GmailReaderService {
 
     const body = this.extractBody(data.payload)
     const bodyHtml = this.extractBodyHtml(data.payload)
+    const attachments = this.extractAttachments(data.payload)
 
     return {
       id: data.id,
@@ -152,6 +161,68 @@ export class GmailReaderService {
       date,
       body,
       bodyHtml,
+      attachments,
+    }
+  }
+
+  private extractAttachments(payload: any): GmailAttachment[] {
+    const attachments: GmailAttachment[] = []
+    this.findAttachments(payload, attachments)
+    return attachments
+  }
+
+  private findAttachments(part: any, attachments: GmailAttachment[]): void {
+    if (!part) return
+
+    if (part.filename && part.body?.attachmentId) {
+      attachments.push({
+        attachmentId: part.body.attachmentId,
+        filename: part.filename,
+        mimeType: part.mimeType || 'application/octet-stream',
+        size: part.body.size || 0,
+      })
+    }
+
+    if (part.parts) {
+      for (const subPart of part.parts) {
+        this.findAttachments(subPart, attachments)
+      }
+    }
+  }
+
+  async getAttachmentContent(messageId: string, attachmentId: string): Promise<Uint8Array | null> {
+    try {
+      const accessToken = await this.authService.getAccessToken()
+      const url = `${this.baseUrl}/messages/${messageId}/attachments/${attachmentId}`
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Accept: 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        logger.error(`Falha ao obter anexo ${attachmentId}`, { status: response.status })
+        return null
+      }
+
+      const data = await response.json()
+      if (!data.data) return null
+
+      const base64Data = data.data.replace(/-/g, '+').replace(/_/g, '/')
+      const binaryString = atob(base64Data)
+      const bytes = new Uint8Array(binaryString.length)
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i)
+      }
+
+      logger.info(`Anexo ${attachmentId} obtido com sucesso`, { size: bytes.length })
+      return bytes
+    } catch (error) {
+      logger.error(`Erro ao obter anexo ${attachmentId}`, { error: String(error) })
+      return null
     }
   }
 

@@ -30,17 +30,25 @@ export function AttachmentsTab({ attachments, invoices = [] }: AttachmentsTabPro
     handleDownload({ storagePath, fileName }, downloadInvoice, id)
   }
 
-  const formattedAttachments = attachments.map((attachment) => ({
-    id: attachment.id,
-    fileName: attachment.file_name,
-    fileSize: attachment.file_size,
-    storagePath: attachment.storage_path,
-    createdAt: attachment.created_at,
-    additionalInfo: attachment.order_fulfillments
+  const formattedAttachments = attachments.map((attachment) => {
+    const sourceLabel = attachment.source === 'email' ? 'Anexo de email' : undefined
+    const ofInfo = attachment.order_fulfillments
       ? `O.F. ${attachment.order_fulfillments.of_number}`
-      : undefined,
-    type: 'attachment' as const,
-  }))
+      : undefined
+    const additionalInfo = [sourceLabel, ofInfo].filter(Boolean).join(' • ')
+
+    return {
+      id: attachment.id,
+      fileName: attachment.file_name,
+      fileSize: attachment.file_size,
+      storagePath: attachment.storage_path,
+      publicUrl: attachment.public_url,
+      createdAt: attachment.created_at,
+      additionalInfo: additionalInfo || undefined,
+      type: 'attachment' as const,
+      source: attachment.source,
+    }
+  })
 
   const formattedInvoices = invoices
     .filter((invoice) => invoice.invoice_path)
@@ -74,7 +82,12 @@ export function AttachmentsTab({ attachments, invoices = [] }: AttachmentsTabPro
     if (type === 'invoice') {
       onDownloadInvoice(storagePath, fileName, id)
     } else {
-      onDownloadAttachment(storagePath, fileName, id)
+      const doc = formattedAttachments.find((d) => d.id === id)
+      if (doc?.source === 'email' && doc.publicUrl) {
+        window.open(doc.publicUrl, '_blank')
+      } else {
+        onDownloadAttachment(storagePath, fileName, id)
+      }
     }
   }
 
