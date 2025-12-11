@@ -17,6 +17,8 @@ export function getEventStatusFilterOptions(): FilterOption[] {
 export function getEventTypeFilterOptions(): FilterOption[] {
   return [
     { value: '', label: 'Todos os tipos' },
-    ...enumToSelectOptions(EventType, EventTypeLabels),
+    ...enumToSelectOptions(EventType, EventTypeLabels).filter(
+      (option) => option.value !== EventType.CONTINUOUS
+    ),
   ]
 }
