@@ -3,11 +3,9 @@
 import { createClient } from '@/shared/lib/supabase/server'
 import { getUserData, requireAdminPermission } from '@/entities/user'
 import { randomBytes } from 'crypto'
-import { revalidatePath } from 'next/cache'
 import { createActivityLog } from '@/features/logs'
 import { logger } from '@/shared/lib/logger'
 import { createInviteSchema, type CreateInviteInput } from '../lib/validations'
-import { ROUTES } from '@/shared/config'
 
 type Result =
   | { success: true; inviteId: string }

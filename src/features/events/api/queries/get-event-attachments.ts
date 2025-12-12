@@ -11,6 +11,15 @@ export interface EventAttachment {
   created_at: string
 }
 
+interface DbAttachment {
+  id: string
+  file_name: string
+  file_type: string
+  file_size: number
+  storage_path: string
+  created_at: string
+}
+
 export async function getEventAttachments(eventId: string): Promise<EventAttachment[]> {
   const supabase = await createClient()
 
@@ -52,7 +61,7 @@ export async function getEventAttachments(eventId: string): Promise<EventAttachm
       .order('created_at', { ascending: false })
 
     if (dbAttachments) {
-      for (const att of dbAttachments as any[]) {
+      for (const att of dbAttachments as DbAttachment[]) {
         const { data: urlData } = supabase.storage
           .from('event-attachments')
           .getPublicUrl(att.storage_path)
