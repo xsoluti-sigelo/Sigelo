@@ -39,6 +39,7 @@ export async function getOperationComments(operationId: string): Promise<Operati
       created_at,
       updated_at,
       is_deleted,
+      is_pinned,
       users!fk_operation_comments_user (
         id,
         full_name,
@@ -50,6 +51,7 @@ export async function getOperationComments(operationId: string): Promise<Operati
     .eq('operation_id', operationId)
     .eq('tenant_id', userData.tenant_id)
     .eq('is_deleted', false)
+    .order('is_pinned', { ascending: false })
     .order('created_at', { ascending: false })
 
   if (error) {

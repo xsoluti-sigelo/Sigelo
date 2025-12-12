@@ -64,6 +64,7 @@ export async function addOperationComment(input: OperationCommentInput): Promise
         created_at,
         updated_at,
         is_deleted,
+        is_pinned,
         users!fk_operation_comments_user (
           id,
           full_name,

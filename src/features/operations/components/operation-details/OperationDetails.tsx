@@ -19,6 +19,7 @@ import {
   removeVehicleAssignment,
   addOperationComment,
   removeOperationComment,
+  togglePinComment,
 } from '@/features/operations/api/mutations'
 import { showSuccessToast, showErrorToast } from '@/shared/lib/toast'
 import { LocationMap } from './LocationMap'
@@ -218,6 +219,27 @@ export function OperationDetails({
     }
   }
 
+  const handleTogglePin = async (commentId: string, isPinned: boolean) => {
+    const result = await togglePinComment(commentId, operation.id, isPinned)
+
+    if (result.success) {
+      setComments((prev) => {
+        const updated = prev.map((comment) => ({
+          ...comment,
+          is_pinned: comment.id === commentId ? isPinned : (isPinned ? false : comment.is_pinned),
+        }))
+        return updated.sort((a, b) => {
+          if (a.is_pinned && !b.is_pinned) return -1
+          if (!a.is_pinned && b.is_pinned) return 1
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        })
+      })
+      showSuccessToast(isPinned ? 'Comentário fixado!' : 'Comentário desafixado!')
+    } else {
+      showErrorToast(result.error || 'Erro ao fixar comentário')
+    }
+  }
+
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950">
       <div className="max-w-[1600px] mx-auto">
@@ -266,6 +288,7 @@ export function OperationDetails({
             isSavingComment={isSavingComment}
             onAddComment={handleAddComment}
             onRemoveComment={handleRemoveComment}
+            onTogglePin={handleTogglePin}
           />
         </div>
       </div>

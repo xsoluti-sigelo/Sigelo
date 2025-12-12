@@ -95,6 +95,7 @@ export interface OperationComment {
   created_at: string
   updated_at: string | null
   is_deleted: boolean
+  is_pinned: boolean
   users?: {
     id: string
     full_name: string

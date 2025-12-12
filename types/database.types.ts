@@ -1502,6 +1502,7 @@ export type Database = {
           created_at: string
           id: string
           is_deleted: boolean
+          is_pinned: boolean
           operation_id: string
           tenant_id: string
           updated_at: string | null
@@ -1512,6 +1513,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_deleted?: boolean
+          is_pinned?: boolean
           operation_id: string
           tenant_id: string
           updated_at?: string | null
@@ -1522,6 +1524,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_deleted?: boolean
+          is_pinned?: boolean
           operation_id?: string
           tenant_id?: string
           updated_at?: string | null
