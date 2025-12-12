@@ -35,6 +35,8 @@ function processEquipmentByEvent(orders: OrderData[]): Map<string, EquipmentInfo
     const existing = equipmentByEvent.get(order.event_id) || {
       std: 0,
       pcd: 0,
+      kross: 0,
+      pia: 0,
       ofNumbers: [],
       ofNumbersStd: [],
       ofNumbersPcd: [],
@@ -45,13 +47,17 @@ function processEquipmentByEvent(orders: OrderData[]): Map<string, EquipmentInfo
 
     ;(order.new_order_items || []).forEach((item) => {
       const description = item.description?.toUpperCase() || ''
-      const isPCD = description.includes('PCD')
+      const quantity = item.quantity || 0
 
-      if (isPCD) {
-        existing.pcd += item.quantity || 0
+      if (description.includes('PCD') || description.includes('PNE')) {
+        existing.pcd += quantity
         hasPcd = true
-      } else {
-        existing.std += item.quantity || 0
+      } else if (description.includes('KROSS') || description.includes('MICTÓRIO')) {
+        existing.kross += quantity
+      } else if (description.includes('PIA')) {
+        existing.pia += quantity
+      } else if (description.includes('BANHEIRO') || description.includes('STANDARD')) {
+        existing.std += quantity
         hasStd = true
       }
     })
@@ -83,14 +89,75 @@ function processProducersByEvent(producers: ProducerData[]): Map<string, Produce
   return producerByEvent
 }
 
+interface CommentData {
+  operation_id: string
+  comment_text: string
+  is_pinned?: boolean
+  created_at: string
+}
+
+async function fetchCommentsForOperations(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  operationIds: string[],
+): Promise<CommentData[]> {
+  if (operationIds.length === 0) {
+    return []
+  }
+
+  const { data, error } = await supabase
+    .from('operation_comments')
+    .select('operation_id, comment_text, is_pinned, created_at')
+    .in('operation_id', operationIds)
+    .eq('is_deleted', false)
+
+  if (error) {
+    return []
+  }
+
+  return data || []
+}
+
+function processCommentsByOperation(comments: CommentData[]): Map<string, string> {
+  const commentByOperation = new Map<string, string>()
+  const groupedComments = new Map<string, CommentData[]>()
+
+  comments.forEach((comment) => {
+    const existing = groupedComments.get(comment.operation_id) || []
+    existing.push(comment)
+    groupedComments.set(comment.operation_id, existing)
+  })
+
+  groupedComments.forEach((opComments, operationId) => {
+    const pinned = opComments.find((c) => c.is_pinned === true)
+    if (pinned) {
+      const textContent = pinned.comment_text.replace(/<[^>]*>/g, '').trim()
+      commentByOperation.set(operationId, textContent)
+      return
+    }
+
+    const sorted = opComments.sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    )
+    if (sorted.length > 0) {
+      const textContent = sorted[0].comment_text.replace(/<[^>]*>/g, '').trim()
+      commentByOperation.set(operationId, textContent)
+    }
+  })
+
+  return commentByOperation
+}
+
 function transformToOperationDisplay(
   operation: OperationData,
   equipment?: EquipmentInfo,
   producer?: ProducerInfo,
+  observation?: string | null,
 ): OperationDisplay {
   const defaultEquipment: EquipmentInfo = {
     std: 0,
     pcd: 0,
+    kross: 0,
+    pia: 0,
     ofNumbers: [],
     ofNumbersStd: [],
     ofNumbersPcd: [],
@@ -132,6 +199,8 @@ function transformToOperationDisplay(
     event_source: operation.new_events?.source || null,
     equipment_std: equipmentData.std,
     equipment_pcd: equipmentData.pcd,
+    equipment_kross: equipmentData.kross,
+    equipment_pia: equipmentData.pia,
     of_number: equipmentData.ofNumbers.join(', ') || null,
     of_number_std: equipmentData.ofNumbersStd.join(', ') || null,
     of_number_pcd: equipmentData.ofNumbersPcd.join(', ') || null,
@@ -141,7 +210,7 @@ function transformToOperationDisplay(
     helper_name: operation.helper,
     vehicle_license_plate: operation.vehicle,
     instructions: operation.notes,
-    observations: null,
+    observations: observation || null,
   }
 }
 
@@ -504,9 +573,16 @@ export async function getAllOperationsForExport({
   }
 
   const eventIds = [...new Set((data || []).map((op) => op.new_events.id).filter(Boolean))]
+  const operationIds = (data || []).map((op) => op.id)
+
+  const comments = await fetchCommentsForOperations(supabase, operationIds)
+  const commentByOperation = processCommentsByOperation(comments)
 
   if (eventIds.length === 0) {
-    return (data || []).map((op: OperationData) => transformToOperationDisplay(op))
+    return (data || []).map((op: OperationData) => {
+      const observation = commentByOperation.get(op.id)
+      return transformToOperationDisplay(op, undefined, undefined, observation)
+    })
   }
 
   const [ordersResult, producersResult] = await Promise.all([
@@ -537,7 +613,8 @@ export async function getAllOperationsForExport({
   return (data || []).map((op: OperationData) => {
     const equipment = equipmentByEvent.get(op.new_events.id)
     const producer = producerByEvent.get(op.new_events.id)
-    return transformToOperationDisplay(op, equipment, producer)
+    const observation = commentByOperation.get(op.id)
+    return transformToOperationDisplay(op, equipment, producer, observation)
   })
 }
 
@@ -553,6 +630,16 @@ export async function getOperationsByIds(ids: string[]): Promise<OperationDispla
 
   if (!user) {
     throw new Error('Unauthorized')
+  }
+
+  const { data: userData } = await supabase
+    .from('users')
+    .select('tenant_id')
+    .eq('google_id', user.id)
+    .single()
+
+  if (!userData?.tenant_id) {
+    throw new Error('Tenant not found')
   }
 
   const { data, error } = await supabase
@@ -600,9 +687,16 @@ export async function getOperationsByIds(ids: string[]): Promise<OperationDispla
   }
 
   const eventIds = [...new Set((data || []).map((op) => op.new_events.id).filter(Boolean))]
+  const operationIds = (data || []).map((op) => op.id)
+
+  const comments = await fetchCommentsForOperations(supabase, operationIds)
+  const commentByOperation = processCommentsByOperation(comments)
 
   if (eventIds.length === 0) {
-    return (data || []).map((op: OperationData) => transformToOperationDisplay(op))
+    return (data || []).map((op: OperationData) => {
+      const observation = commentByOperation.get(op.id)
+      return transformToOperationDisplay(op, undefined, undefined, observation)
+    })
   }
 
   const [ordersResult, producersResult] = await Promise.all([
@@ -633,6 +727,7 @@ export async function getOperationsByIds(ids: string[]): Promise<OperationDispla
   return (data || []).map((op: OperationData) => {
     const equipment = equipmentByEvent.get(op.new_events.id)
     const producer = producerByEvent.get(op.new_events.id)
-    return transformToOperationDisplay(op, equipment, producer)
+    const observation = commentByOperation.get(op.id)
+    return transformToOperationDisplay(op, equipment, producer, observation)
   })
 }

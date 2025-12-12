@@ -15,6 +15,8 @@ export interface OperationDisplay {
   event_source?: string | null
   equipment_std?: number
   equipment_pcd?: number
+  equipment_kross?: number
+  equipment_pia?: number
   of_number?: string | null
   of_number_std?: string | null
   of_number_pcd?: string | null

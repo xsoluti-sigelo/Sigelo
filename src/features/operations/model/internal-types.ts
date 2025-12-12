@@ -68,6 +68,8 @@ export interface ProducerData {
 export interface EquipmentInfo {
   std: number
   pcd: number
+  kross: number
+  pia: number
   ofNumbers: string[]
   ofNumbersStd: string[]
   ofNumbersPcd: string[]
