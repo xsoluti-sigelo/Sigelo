@@ -7,7 +7,6 @@ import {
   type OperationCommentInput,
 } from '@/features/operations/lib/validations'
 import type { OperationComment } from '@/features/operations/model/operation-types'
-import { createAdminClient } from '@/shared/lib/supabase/admin'
 
 type Result =
   | { success: true; comment: OperationComment }
@@ -26,7 +25,6 @@ export async function addOperationComment(input: OperationCommentInput): Promise
 
   const { operationId, comment } = validation.data
   const supabase = await createClient()
-  const admin = createAdminClient()
 
   const {
     data: { user },
@@ -36,7 +34,7 @@ export async function addOperationComment(input: OperationCommentInput): Promise
     return { success: false, error: 'Usuário não autenticado' }
   }
 
-  const { data: userData, error: tenantError } = await admin
+  const { data: userData, error: tenantError } = await supabase
     .from('users')
     .select('id, tenant_id, full_name, email, picture_url')
     .eq('google_id', user.id)
@@ -46,7 +44,7 @@ export async function addOperationComment(input: OperationCommentInput): Promise
     return { success: false, error: 'Tenant não encontrado' }
   }
 
-  const { data, error } = await admin
+  const { data, error } = await supabase
     .from('operation_comments')
     .insert({
       operation_id: operationId,

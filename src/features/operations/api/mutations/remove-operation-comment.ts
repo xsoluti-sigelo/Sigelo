@@ -6,7 +6,6 @@ import {
   removeOperationCommentSchema,
   type RemoveOperationCommentInput,
 } from '@/features/operations/lib/validations'
-import { createAdminClient } from '@/shared/lib/supabase/admin'
 
 type Result =
   | { success: true }
@@ -25,7 +24,6 @@ export async function removeOperationComment(input: RemoveOperationCommentInput)
 
   const { commentId, operationId } = result.data
   const supabase = await createClient()
-  const admin = createAdminClient()
 
   const {
     data: { user },
@@ -35,7 +33,7 @@ export async function removeOperationComment(input: RemoveOperationCommentInput)
     return { success: false, error: 'Usuário não autenticado' }
   }
 
-  const { data: userData } = await admin
+  const { data: userData } = await supabase
     .from('users')
     .select('id, tenant_id, role')
     .eq('google_id', user.id)
@@ -48,7 +46,7 @@ export async function removeOperationComment(input: RemoveOperationCommentInput)
     return { success: false, error: 'Tenant não encontrado' }
   }
 
-  const { data: targetComment } = await admin
+  const { data: targetComment } = await supabase
     .from('operation_comments')
     .select('id, user_id, tenant_id')
     .eq('id', commentId)
@@ -62,7 +60,7 @@ export async function removeOperationComment(input: RemoveOperationCommentInput)
     return { success: false, error: 'Você não tem permissão para remover este comentário' }
   }
 
-  const { data: softDeleted, error: softDeleteError } = await admin
+  const { data: softDeleted, error: softDeleteError } = await supabase
     .from('operation_comments')
     .update({ is_deleted: true })
     .eq('id', commentId)
@@ -77,7 +75,7 @@ export async function removeOperationComment(input: RemoveOperationCommentInput)
   let removed = Boolean(softDeleted)
 
   if (!removed && role === 'ADMIN') {
-    const { data: deleted, error: deleteError } = await admin
+    const { data: deleted, error: deleteError } = await supabase
       .from('operation_comments')
       .delete()
       .eq('id', commentId)

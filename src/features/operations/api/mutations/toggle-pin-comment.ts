@@ -1,7 +1,6 @@
 'use server'
 
 import { createClient } from '@/shared/lib/supabase/server'
-import { createAdminClient } from '@/shared/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import { UserRole } from '@/shared/config/enums'
 
@@ -13,7 +12,6 @@ export async function togglePinComment(
   isPinned: boolean
 ): Promise<Result> {
   const supabase = await createClient()
-  const admin = createAdminClient()
 
   const {
     data: { user },
@@ -23,7 +21,7 @@ export async function togglePinComment(
     return { success: false, error: 'Usuário não autenticado' }
   }
 
-  const { data: userData, error: userError } = await admin
+  const { data: userData, error: userError } = await supabase
     .from('users')
     .select('id, tenant_id, role')
     .eq('google_id', user.id)
@@ -38,7 +36,7 @@ export async function togglePinComment(
   }
 
   if (isPinned) {
-    await admin
+    await supabase
       .from('operation_comments')
       .update({ is_pinned: false })
       .eq('operation_id', operationId)
@@ -46,7 +44,7 @@ export async function togglePinComment(
       .eq('is_pinned', true)
   }
 
-  const { error } = await admin
+  const { error } = await supabase
     .from('operation_comments')
     .update({ is_pinned: isPinned })
     .eq('id', commentId)
