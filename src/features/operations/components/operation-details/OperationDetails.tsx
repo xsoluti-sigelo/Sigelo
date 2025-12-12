@@ -246,14 +246,26 @@ export function OperationDetails({
         <OperationHeader operation={operation} isPending={isPending} onSave={handleSaveOperation} canEdit={hasWritePermission} />
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr,400px] gap-8 px-8 py-8">
-          <div className="h-[700px]">
-            <LocationMap
-              rawAddress={operation.events?.event_locations?.[0]?.raw_address}
-              formattedAddress={operation.events?.event_locations?.[0]?.formatted_address}
-              latitude={operation.events?.event_locations?.[0]?.latitude}
-              longitude={operation.events?.event_locations?.[0]?.longitude}
-              geocodingStatus={operation.events?.event_locations?.[0]?.geocoding_status}
+          <div className="space-y-6">
+            <OperationComments
+              comments={comments}
+              userId={userId}
+              isAdmin={isAdmin}
+              isSavingComment={isSavingComment}
+              onAddComment={handleAddComment}
+              onRemoveComment={handleRemoveComment}
+              onTogglePin={handleTogglePin}
             />
+
+            <div className="h-[400px]">
+              <LocationMap
+                rawAddress={operation.events?.event_locations?.[0]?.raw_address}
+                formattedAddress={operation.events?.event_locations?.[0]?.formatted_address}
+                latitude={operation.events?.event_locations?.[0]?.latitude}
+                longitude={operation.events?.event_locations?.[0]?.longitude}
+                geocodingStatus={operation.events?.event_locations?.[0]?.geocoding_status}
+              />
+            </div>
           </div>
 
           <div className="space-y-4">
@@ -278,18 +290,6 @@ export function OperationDetails({
               <OperationProducers producers={operation.events.event_producers} />
             )}
           </div>
-        </div>
-
-        <div className="px-8 pb-10">
-          <OperationComments
-            comments={comments}
-            userId={userId}
-            isAdmin={isAdmin}
-            isSavingComment={isSavingComment}
-            onAddComment={handleAddComment}
-            onRemoveComment={handleRemoveComment}
-            onTogglePin={handleTogglePin}
-          />
         </div>
       </div>
     </div>

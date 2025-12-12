@@ -31,32 +31,32 @@ export function LocationMap({
         zoom={16}
       />
 
-      <div className="absolute top-4 left-4 right-4 z-10">
-        <div className="p-4 rounded-xl bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border border-gray-200 dark:border-gray-700 shadow-lg">
-          <div className="flex items-center gap-2 mb-3">
-            <MapPinIcon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Localização</h3>
+      <div className="absolute top-3 left-3 right-3 z-10">
+        <div className="p-3 rounded-lg bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border border-gray-200 dark:border-gray-700 shadow-lg">
+          <div className="flex items-center gap-1.5 mb-2">
+            <MapPinIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+            <h3 className="text-xs font-semibold text-gray-900 dark:text-white">Localização</h3>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {rawAddress && (
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5">
                   Endereço recebido:
                 </p>
-                <p className="text-sm text-gray-900 dark:text-white">{rawAddress}</p>
+                <p className="text-xs text-gray-900 dark:text-white">{rawAddress}</p>
               </div>
             )}
 
             {hasGeocodedAddress && (
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Endereço processado:</p>
-                <p className="text-sm text-gray-900 dark:text-white">{formattedAddress}</p>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5">Endereço processado:</p>
+                <p className="text-xs text-gray-900 dark:text-white">{formattedAddress}</p>
               </div>
             )}
 
             {hasLocation && (
-              <div className="text-xs text-gray-500 dark:text-gray-400">
+              <div className="text-[10px] text-gray-500 dark:text-gray-400">
                 Coordenadas: {latitude}, {longitude}
               </div>
             )}

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Button, RichTextEditor } from '@/shared/ui'
 import {
   ChatBubbleLeftRightIcon,
-  PaperAirplaneIcon,
+  ArrowUpIcon,
   TrashIcon,
   BookmarkIcon as BookmarkOutline,
 } from '@heroicons/react/24/outline'
@@ -33,6 +33,7 @@ export function OperationComments({
   onTogglePin,
 }: OperationCommentsProps) {
   const [newComment, setNewComment] = useState('')
+  const [editorKey, setEditorKey] = useState(0)
   const [removingCommentId, setRemovingCommentId] = useState<string | null>(null)
   const [pinningCommentId, setPinningCommentId] = useState<string | null>(null)
 
@@ -50,6 +51,7 @@ export function OperationComments({
     if (hasTextContent(newComment)) {
       onAddComment(newComment)
       setNewComment('')
+      setEditorKey((prev) => prev + 1)
     }
   }
 
@@ -86,6 +88,7 @@ export function OperationComments({
       <div className="p-4">
         <div className="bg-gray-50 dark:bg-gray-950 rounded-lg border border-gray-200 dark:border-gray-800">
           <RichTextEditor
+            key={editorKey}
             content={newComment}
             onChange={setNewComment}
             placeholder="Adicione uma observação sobre esta operação..."
@@ -103,7 +106,7 @@ export function OperationComments({
               disabled={!hasTextContent(newComment)}
               className="flex items-center gap-2"
             >
-              <PaperAirplaneIcon className="w-4 h-4" />
+              <ArrowUpIcon className="w-4 h-4" />
               Enviar
             </Button>
           </div>
